@@ -72,3 +72,15 @@ model VerificationToken {
 
     @@unique([identifier, token])
 }
+
+model GuestSession {
+  id          String   @id @default(cuid())
+  guestName   String
+  stoody      Int
+  shortBreak  Int
+  longBreak   Int
+  cycles      Int
+  createdAt   DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+  deviceId    String
+}
