@@ -1,4 +1,4 @@
-import CircularSlider from './CircularSlider';
+import CircularSlider from '../inputs/CircularSlider';
 import type { Meta, StoryObj } from '@storybook/react';
 
 const meta: Meta<typeof CircularSlider> = {

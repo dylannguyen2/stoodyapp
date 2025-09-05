@@ -1,81 +1,122 @@
-"use client";
+'use client';
 
-import React, { useState } from 'react';
-import DirectionButton from './DirectionButton';
+import React, { useEffect, useState } from 'react';
 
 interface StickyNotesProps {
   name: string;
   setName: (v: string) => void;
-  sessionCreateState: string;
   nextSessionState: () => void;
+  handleStartSession: () => void;
+  isExiting?: boolean;
+  onExited?: () => void;
 }
 
-export default function StickyNotes({ name, setName, sessionCreateState, nextSessionState }: StickyNotesProps) {
+export default function StickyNotes({ name, setName, nextSessionState, handleStartSession, isExiting: parentExiting = false, onExited, }: StickyNotesProps) {
   const [isExiting, setIsExiting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (!parentExiting) return;
+    setIsExiting(true);
+    const ANIM_DURATION = 200;
+    const t = window.setTimeout(() => {
+      setIsExiting(false);
+      console.debug('[StickyNotes] parent-triggered exit completed — calling onExited');
+      onExited?.();
+    }, ANIM_DURATION + 50);
+    return () => window.clearTimeout(t);
+  }, [parentExiting, onExited]);
+
+  useEffect(() => {
+    setMounted(false);
+    const raf = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   const handleNextClick = () => {
     if (isExiting) return;
-    setIsExiting(true);
+    if (onExited) {
+      setIsExiting(true);
+      const ANIM_DURATION = 200;
+      window.setTimeout(() => {
+        setIsExiting(false);
+        onExited();
+      }, ANIM_DURATION + 50);
+      return;
+    }
 
-    const ANIM_DURATION = 700;
+    setIsExiting(true);
+    const ANIM_DURATION = 200;
     window.setTimeout(() => {
       nextSessionState();
       setIsExiting(false);
     }, ANIM_DURATION + 50);
   };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleNextClick();
+    }
+  };
+
   return (
-    <div className="relative w-80 h-96 group cursor-pointer mx-auto mt-6">
+    <div className="relative w-72 h-72 group cursor-pointer mx-auto">
       {[3, 2, 1].map((num) => {
-        // exit transforms per layer to create a scattered animation
         const exitTransforms: Record<number, string> = {
-          1: 'translate-x-40 -translate-y-20 rotate-12 opacity-0',
-          2: '-translate-x-32 -translate-y-6 -rotate-12 opacity-0',
-          3: 'translate-x-56 translate-y-8 rotate-30 opacity-0',
+          // fade to a slightly visible state instead of fully transparent
+          1: 'translate-x-40 -translate-y-20 rotate-12 opacity-25',
+          2: '-translate-x-40 -translate-y-20 -rotate-12 opacity-25',
+          3: 'translate-y-32 rotate-0 opacity-25',
         };
 
-        const baseClasses = `absolute w-full h-full rounded-xl shadow-xl transition-all duration-700 ease-in-out ${
+  const baseClasses = `absolute w-full h-full rounded-xl shadow-xl transition-transform transition-opacity duration-200 ease-in-out ${
           num === 1
             ? 'bg-[#C18FFF] z-30 hover:scale-105'
             : num === 2
-            ? 'bg-[#5EB1FF] top-2 left-2 z-20 -rotate-3 pointer-events-none'
-            : 'bg-[#FFC645] z-10 top-4 left-4 -rotate-7 pointer-events-none'
+            ? 'bg-[#5EB1FF] top-2 left-2 z-20 -rotate-3 pointer-events-none group-hover:rotate-3'
+            : 'bg-[#FFC645] z-10 top-4 left-4 -rotate-7 pointer-events-none group-hover:rotate-3'
         }`;
 
         const exitClass = isExiting ? exitTransforms[num] : '';
+
+  const mountClass = mounted ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2 pointer-events-none';
         const style: React.CSSProperties = isExiting
           ? { transitionDelay: `${(3 - num) * 80}ms` }
           : {};
 
         return (
-          <div
-            key={num}
-            className={`${baseClasses} ${exitClass}`}
-            style={style}
-          >
-          {/* content only on top layer */}
-          {num === 1 && (
-            <div className="flex flex-col items-center mt-6 h-full text-black font-bold transition-all duration-300">
-              <h1 className="text-3xl gochi-hand-regular">Who's Studying?</h1>
+            <div
+              key={num}
+              className={`${baseClasses} ${mountClass} ${exitClass}`}
+              style={style}
+            >
+        {num === 1 && (
+          <div className="flex flex-col items-center mt-6 h-full text-black font-bold transition-all duration-200">
+                <h1 className="text-3xl gochi-hand-regular">Who's Studying?</h1>
 
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your name"
-                className={
-                  "mt-4 w-56 px-3 py-2 rounded-lg bg-white bg-opacity-20 " +
-                  "placeholder-white/80 text-black " +
-                  "focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] focus:ring-opacity-50 " +
-                  "border border-white/30 transition-shadow duration-300 " +
-                  "shadow-sm focus:shadow-md"
-                }
-              />
+                {/* Sticky note styled input */}
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={name}
+                  className="
+                    mt-4 w-56 px-4 py-3
+                    rounded-sm
+                    bg-[#C18FFF] text-black placeholder-black/40
+                    font-semibold gochi-hand-regular
+                    shadow-[2px_4px_8px_rgba(0,0,0,0.2)]
+                    border border-[#A46CDB]
+                    focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/60
+                    transform -rotate-1
+                  "
+                />
 
-              <DirectionButton handleNextClick={handleNextClick} sessionCreateState={sessionCreateState} text="Next" />
-            </div>
-          )}
-        </div>
-      );
+              </div>
+            )}
+          </div>
+        );
       })}
     </div>
   );

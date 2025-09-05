@@ -2,8 +2,8 @@ import React from 'react';
 
 interface TimeButtonProps {
   text: string;
-  value: number; // minutes for the button
-  currentTime: number; // current stoody time in minutes
+  value: number;
+  currentTime: number;
   onClick?: (value: number) => void;
   isExiting?: boolean;
   onExited?: () => void;
@@ -20,11 +20,23 @@ export default function TimeButton({ text, value, currentTime, onClick, isExitin
   const backShadowClass = isSelected
     ? 'shadow-[0_2px_4px_rgba(93,33,194,0.4)] top-[2px] bg-[#6F3BDC]'
     : 'shadow-[0_6px_12px_rgba(196,156,207,0.4)] top-[6px] bg-[#C49CCF]';
+  
+  const [mounted, setMounted] = React.useState(false);
+    React.useEffect(() => {
+      const raf = requestAnimationFrame(() => setMounted(true));
+      return () => cancelAnimationFrame(raf);
+    }, []);
 
   return (
     <div
-      className={`relative mx-2 transform transition-all duration-700 ease-in-out ${isExiting ? 'opacity-0 scale-75 -translate-y-6' : 'opacity-100 scale-100 translate-y-0'}`}
-      style={{ width: 96, height: 54 }}
+      className={`flex flex-col items-center gap-4 transform transition-transform transition-opacity duration-200${
+        isExiting
+          ? 'opacity-0 scale-95 translate-y-2'
+          : mounted
+          ? 'opacity-100 scale-100 translate-y-0'
+          : 'opacity-0 scale-95 translate-y-2'
+      }`}
+      style={{ willChange: 'transform, opacity' }}
     >
       {/* exit timer callback */}
       {isExiting && onExited ? <ExitCaller onExited={onExited} /> : null}
@@ -61,7 +73,7 @@ export default function TimeButton({ text, value, currentTime, onClick, isExitin
 
 function ExitCaller({ onExited }: { onExited: () => void }) {
   React.useEffect(() => {
-    const t = setTimeout(() => onExited(), 700);
+    const t = setTimeout(() => onExited(), 200);
     return () => clearTimeout(t);
   }, [onExited]);
   return null;

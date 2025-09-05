@@ -1,5 +1,5 @@
 // Timer.stories.tsx
-import Timer from './Timer';
+import Timer from '../Timer';
 import type { Meta, StoryObj } from '@storybook/react';
 
 const meta: Meta<typeof Timer> = {

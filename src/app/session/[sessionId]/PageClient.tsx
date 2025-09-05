@@ -1,11 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Timer from '../_components/Timer';
+import Timer from '../../_components/Timer';
 import { useSearchParams, useParams } from 'next/navigation';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 interface SessionData {
   id?: string;
@@ -52,7 +49,7 @@ const SessionPage = () => {
   if (session.error) return <p>Session not found.</p>;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <h1 className="text-3xl font-bold mb-6">
         🧠 {session.guestName || guestNameFromUrl}'s Pomodoro
       </h1>

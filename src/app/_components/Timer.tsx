@@ -19,6 +19,8 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles }: TimerPr
 
   const timeline = ['transition', 'work', 'shortBreak', 'work', 'shortBreak', 'work', 'longBreak'];
 
+  const phaseLabel = phase === 'work' ? 'Work' : phase === 'shortBreak' ? 'Short Break' : phase === 'longBreak' ? 'Long Break' : 'Transition';
+
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = setInterval(() => {
@@ -64,6 +66,17 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles }: TimerPr
       setStep(nextStep);
     }
   }, [timer, phase, isRunning, cycles, stoody, shortBreak, longBreak, cycleCount]);
+
+  useEffect(() => {
+    const prevTitle = document.title;
+    const mm = String(Math.floor(timer / 60)).padStart(2, '0');
+    const ss = String(timer % 60).padStart(2, '0');
+    const runState = isRunning ? '' : ' (Paused)';
+    document.title = `Stoody | ${phaseLabel} ${mm}:${ss}${runState}`;
+    return () => {
+      document.title = prevTitle;
+    };
+  }, [timer, phase, isRunning]);
 
   const handleStart = () => setIsRunning(true);
   const handleStop = () => setIsRunning(false);

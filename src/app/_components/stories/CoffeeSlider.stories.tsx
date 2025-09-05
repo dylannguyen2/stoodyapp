@@ -1,0 +1,19 @@
+import React, { useState } from 'react';
+import CoffeeSlider from '../inputs/CoffeeSlider';
+import type { Meta, StoryObj } from '@storybook/react';
+
+const meta: Meta<typeof CoffeeSlider> = {
+  title: 'Components/CoffeeSlider',
+  component: CoffeeSlider,
+};
+
+export default meta;
+
+type Story = StoryObj<typeof CoffeeSlider>;
+
+export const Default: Story = {
+  render: () => {
+    const [coffee, setCoffee] = useState(15);
+    return <CoffeeSlider value={coffee} onChange={setCoffee} />;
+  },
+};
