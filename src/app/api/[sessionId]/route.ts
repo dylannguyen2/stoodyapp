@@ -3,8 +3,8 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function GET(req: NextRequest, context: { params: { sessionId: string } }) {
-  const sessionId = context.params.sessionId;
+export async function GET(req: NextRequest, { params }: { params: any }) {
+  const { sessionId } = params;
   console.log('Requested sessionId:', sessionId);
 
   const session = await prisma.guestSession.findUnique({

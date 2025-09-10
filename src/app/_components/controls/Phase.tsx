@@ -1,0 +1,44 @@
+type PhaseButtonProps = {
+  onClick: (phase: 'stoody' | 'shortBreak' | 'longBreak' | 'transition') => void;
+  currentPhase: 'stoody' | 'shortBreak' | 'longBreak' | 'transition';
+  phase: 'stoody' | 'shortBreak' | 'longBreak' | 'transition';
+};
+
+export default function PhaseButton({ onClick, currentPhase, phase }: PhaseButtonProps) {
+  let colour;
+  if (phase === "stoody") {
+    colour =  currentPhase === 'stoody' ? 'from-[#C18FFF] to-[#8B5CF6] shadow-[0_4px_0px_#8054c7] hover:shadow-[0_2px_0px_#8054c7] hover:translate-y-[2px] active:shadow-[0_0px_0px_#8054c7]'
+    : 'from-[#D9D9D9] to-[#D9D9D9] shadow-[0_4px_0px_#B0B0B0] hover:shadow-[0_2px_0px_#B0B0B0] hover:translate-y-[2px] active:shadow-[0_0px_0px_#B0B0B0]';
+  }
+
+  else if (phase === "shortBreak") {
+    colour = currentPhase === 'shortBreak' ? 'from-[#2BB5A3] to-[#1E8771] shadow-[0_4px_0px_#1E8771] hover:shadow-[0_2px_0px_#1E8771] hover:translate-y-[2px] active:shadow-[0_0px_0px_#1E8771]'
+    : 'from-[#D9D9D9] to-[#D9D9D9] shadow-[0_4px_0px_#B0B0B0] hover:shadow-[0_2px_0px_#B0B0B0] hover:translate-y-[2px] active:shadow-[0_0px_0px_#B0B0B0]';
+  }
+  else if (phase === "longBreak") {
+    colour = currentPhase === "longBreak" ? 'from-[#4CAF50] to-[#3D9440] shadow-[0_4px_0px_#357A38] hover:shadow-[0_2px_0px_#357A38] hover:translate-y-[2px] active:shadow-[0_0px_0px_#357A38]'
+    : 'from-[#D9D9D9] to-[#D9D9D9] shadow-[0_4px_0px_#B0B0B0] hover:shadow-[0_2px_0px_#B0B0B0] hover:translate-y-[2px] active:shadow-[0_0px_0px_#B0B0B0]';
+  }
+
+
+  return (
+    <div className="flex items-center gap-3 relative z-30">
+      <button
+        type="button"
+        onClick={() => onClick(phase)}
+        className={`
+          px-5 py-2
+          w-40 
+          rounded-xl 
+          bg-gradient-to-b ${colour}
+          text-white font-semibold gochi-hand-regular text-2xl
+          active:translate-y-[4px]
+          transition-all duration-150
+          cursor-pointer
+        `}
+      >
+        {phase}
+      </button>
+    </div>
+  );
+}

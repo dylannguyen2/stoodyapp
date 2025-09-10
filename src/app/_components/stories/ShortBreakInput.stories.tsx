@@ -19,9 +19,6 @@ export const Default: Story = {
       <ShortBreakInput
         onChange={setCoffee}
         value={coffee}
-        sessionCreateState={sessionCreationStates[2]}
-        nextSessionState={() => console.log('Next session')}
-        prevSessionState={() => console.log('Previous session')}
       />
     );
   },

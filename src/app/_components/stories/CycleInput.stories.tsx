@@ -20,9 +20,6 @@ export const Default: Story = {
       <CycleInput
         onChange={setCoffee}
         value={coffee}
-        sessionCreateState={sessionCreationStates[4]}
-        nextSessionState={() => console.log('Next session')}
-        prevSessionState={() => console.log('Previous session')}
       />
       {coffee}
       </div>

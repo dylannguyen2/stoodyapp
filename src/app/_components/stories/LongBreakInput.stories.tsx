@@ -19,9 +19,6 @@ export const Default: Story = {
       <LongBreakInput
         onChange={setCoffee}
         value={coffee}
-        sessionCreateState={sessionCreationStates[3]}
-        nextSessionState={() => console.log('Next session')}
-        prevSessionState={() => console.log('Previous session')}
       />
     );
   },

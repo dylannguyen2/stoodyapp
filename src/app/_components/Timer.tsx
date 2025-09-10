@@ -1,25 +1,126 @@
-import { useState, useEffect, useRef } from 'react';
-import { set } from 'zod/v4';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import Skip from './controls/Skip';
+import Reset from './controls/Reset';
+import Playback from './controls/Playback';
+import PhaseButton from 'db/app/_components/controls/Phase';
+import StoodyIcon from './icons/StoodyIcon';
+import AudioIcon from './icons/AudioIcon';
+// import EditUI from './inputs/EditUI';
 
+
+
+type Settings = { stoody: number; shortBreak: number; longBreak: number; cycles: number };
 
 interface TimerProps {
   stoody: number;
   shortBreak: number;
   longBreak: number;
   cycles: number;
+  onPhaseChange?: (phase: 'stoody' | 'shortBreak' | 'longBreak' | 'transition') => void;
+  onSettingsSave?: (s: Settings) => void;
+  editOpen?: boolean;
+  onEditOpenChange?: (open: boolean) => void;
 }
+export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseChange, onSettingsSave, editOpen: editOpenProp, onEditOpenChange }: TimerProps) {
+  const [localStoody, setLocalStoody] = useState<number>(stoody);
+  const [localShortBreak, setLocalShortBreak] = useState<number>(shortBreak);
+  const [localLongBreak, setLocalLongBreak] = useState<number>(longBreak);
+  const [localCycles, setLocalCycles] = useState<number>(cycles);
+  const [internalEditOpen, setInternalEditOpen] = useState(false);
+  const editOpen = typeof editOpenProp === 'boolean' ? editOpenProp : internalEditOpen;
+  const setEditOpen = (v: boolean) => {
+    if (typeof onEditOpenChange === 'function') onEditOpenChange(v);
+    else setInternalEditOpen(v);
+  };
 
-export default function Timer({ stoody, shortBreak, longBreak, cycles }: TimerProps) {
+  useEffect(() => setLocalStoody(stoody), [stoody]);
+  useEffect(() => setLocalShortBreak(shortBreak), [shortBreak]);
+  useEffect(() => setLocalLongBreak(longBreak), [longBreak]);
+  useEffect(() => setLocalCycles(cycles), [cycles]);
+
   const [timer, setTimer] = useState(5);
   const [isRunning, setIsRunning] = useState(true);
-  const [phase, setPhase] = useState<'work' | 'shortBreak' | 'longBreak' | 'transition'>('transition');
+  const [phase, setPhase] = useState<'stoody' | 'shortBreak' | 'longBreak' | 'transition'>('transition');
   const [cycleCount, setCycleCount] = useState(1);
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(-1);
+  const [audioOn, setAudioOn] = useState(true);
+
+  const audioToggle = () => { setAudioOn(!audioOn); }
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const timeline = ['transition', 'work', 'shortBreak', 'work', 'shortBreak', 'work', 'longBreak'];
+  const timeline = ['stoody', 'shortBreak', 'stoody', 'shortBreak', 'stoody', 'longBreak'];
+  const timePerCycle = 3 * localStoody + 2 * localShortBreak + localLongBreak;
 
-  const phaseLabel = phase === 'work' ? 'Work' : phase === 'shortBreak' ? 'Short Break' : phase === 'longBreak' ? 'Long Break' : 'Transition';
+  function timeRemaining() {
+    let time = 0;
+    let temp = step + 1;
+    if (phase === 'transition' && step == 5) {
+      temp = -1;
+    }
+    if (phase === "stoody" || phase === "shortBreak" || phase === "longBreak") {
+      time += timer / 60;
+    }
+
+    let currentPhase;
+    while (temp < timeline.length) {
+      currentPhase = timeline[temp];
+  if (currentPhase === 'stoody') time += localStoody;
+  else if (currentPhase === 'shortBreak') time += localShortBreak;
+  else if (currentPhase === 'longBreak') time += localLongBreak;
+      temp++;
+    }
+    let numberFullCyclesLeft = cycles - cycleCount;
+    time += numberFullCyclesLeft * timePerCycle;
+    return time;
+  }
+
+  function percentageComplete() {
+    const totalTime = localCycles * timePerCycle;
+    return 100 - Math.floor((timeRemaining() / totalTime) * 100);
+  }
+
+  function nextPhase() {
+    const nextStep = (step + 1) % timeline.length;
+    if (timeline[step] === 'longBreak' && cycleCount + 1 > cycles) {
+      return "finish";
+    }
+    const nextPhase = timeline[nextStep];
+    return nextPhase === 'stoody' ? `${localStoody}-min stoody`
+    : nextPhase === 'shortBreak' ? `${localShortBreak}-min Short Break`
+    : nextPhase === 'longBreak' ? `${localLongBreak}-min Long Break`
+    : 'Transition';
+  }
+
+  function setNextPhase(phase: string) {
+    let time = phase === 'stoody' ? localStoody * 60 : phase === 'shortBreak' ? localShortBreak * 60 : phase === 'longBreak' ? localLongBreak * 60 : 5;
+    let numSteps = findNextPhase(phase);
+
+    if (step + numSteps >= timeline.length) {
+      setStep((step + numSteps) % timeline.length); 
+      if (cycleCount + 1 <= cycles) {
+        setCycleCount(cycleCount + 1);
+      }
+    } else {
+      setStep(step + numSteps);
+    }
+    setPhase(phase as 'stoody' | 'shortBreak' | 'longBreak' | 'transition');
+    setTimer(time);
+  }
+
+  function findNextPhase(phase: string) {
+    let temp = step;
+    let numSteps = 0
+    while (timeline[temp] !== phase) {
+      temp = (temp + 1) % timeline.length;
+      numSteps += 1;
+    }
+    return numSteps;
+  }
+
+  const phaseLabel = phase === 'stoody' ? 'Work' : phase === 'shortBreak' ? 'Short Break' : phase === 'longBreak' ? 'Long Break' : 'Transition';
+  const nextPhaseLabel = useMemo(() => nextPhase(), [step, cycleCount, localStoody, localShortBreak, localLongBreak, localCycles]);
+  const percentComplete = useMemo(() => percentageComplete(), [timer, phase, cycleCount, localStoody, localShortBreak, localLongBreak, localCycles]);
 
   useEffect(() => {
     if (isRunning) {
@@ -38,34 +139,39 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles }: TimerPr
   }, [isRunning]);
 
   useEffect(() => {
+    try {
+      const a = new Audio('/alarm.wav');
+      a.preload = 'auto';
+      audioRef.current = a;
+    } catch (err) {
+      audioRef.current = null;
+    }
+    return () => {
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+        } catch {}
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isRunning || timer > 0) return;
 
-    if (phase == "work" || phase == "shortBreak") {
-      setPhase('transition');
-      setTimer(5);
-    }
-
-    else if (timeline[step] === 'longBreak') {
-      setStep(0);
-      setPhase('transition');
-      setTimer(5);
-      setCycleCount(cycleCount + 1);
-      if (cycleCount >= cycles) {
-        setIsRunning(false);
+    if (phase !== "transition" && audioOn) {
+      try {
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+          void audioRef.current.play();
+        }
+      } catch (e) {
       }
     }
-    else if (phase === 'transition') {
-      const nextStep = (step + 1) % timeline.length;
-      const nextPhase = timeline[nextStep] as 'work' | 'shortBreak' | 'longBreak' | 'transition';
+    
 
-      setPhase(nextPhase);
-      if (nextPhase === 'work') setTimer(stoody * 60);
-      else if (nextPhase === 'shortBreak') setTimer(shortBreak * 60);
-      else if (nextPhase === 'longBreak') setTimer(longBreak * 60);
-
-      setStep(nextStep);
-    }
-  }, [timer, phase, isRunning, cycles, stoody, shortBreak, longBreak, cycleCount]);
+    handleSkip();
+  }, [timer, phase, isRunning, localCycles, localStoody, localShortBreak, localLongBreak, cycleCount]);
 
   useEffect(() => {
     const prevTitle = document.title;
@@ -78,74 +184,254 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles }: TimerPr
     };
   }, [timer, phase, isRunning]);
 
-  const handleStart = () => setIsRunning(true);
-  const handleStop = () => setIsRunning(false);
+  useEffect(() => {
+    if (onPhaseChange) onPhaseChange(phase);
+  }, [phase, onPhaseChange]);
+
   const handleReset = () => {
-    setIsRunning(false);
-    setPhase('work');
-    setTimer(stoody * 60);
-    setCycleCount(1);
+  setIsRunning(false);
+  setPhase('stoody');
+  setTimer(localStoody * 60);
+  setCycleCount(1);
+  };
+
+  const handlePausePlay = () => {
+    if (isRunning) {
+      setIsRunning(false);
+    }
+    else {
+      setIsRunning(true);
+    }
   };
 
   const handleSkip = () => {
-    if (phase == "work" || phase == "shortBreak" || phase == "longBreak") {
+    if (phase === 'stoody' || phase === 'shortBreak' || phase === 'longBreak') {
+      if (phase === 'longBreak') {
+        const nextCycle = cycleCount + 1;
+        if (nextCycle > cycles) {
+          setIsRunning(false);
+        }
+        else {
+          setCycleCount(nextCycle);
+        }
+      }
       setPhase('transition');
       setTimer(5);
+      return;
     }
-    else if (phase === 'transition') {
-      const nextStep = (step + 1) % timeline.length;
-      const nextPhase = timeline[nextStep] as 'work' | 'shortBreak' | 'longBreak' | 'transition';
 
-      // If we just finished longBreak, reset for next cycle or stop
-      if (timeline[step] === 'longBreak') {
-        // If you want to repeat cycles:
-        setStep(0);
-        setPhase('transition');
-        setTimer(5);
-        setCycleCount(cycleCount + 1);
-        return;
-        // If you want to stop after all cycles, setIsRunning(false) here
-      }
+    if (phase === 'transition') {
+      const nextStep = (step + 1) % timeline.length;
+      const nextPhase = timeline[nextStep] as 'stoody' | 'shortBreak' | 'longBreak';
 
       setPhase(nextPhase);
-      if (nextPhase === 'work') setTimer(stoody * 60);
-      else if (nextPhase === 'shortBreak') setTimer(shortBreak * 60);
-      else if (nextPhase === 'longBreak') setTimer(longBreak * 60);
+  if (nextPhase === 'stoody') setTimer(localStoody * 60);
+  else if (nextPhase === 'shortBreak') setTimer(localShortBreak * 60);
+  else if (nextPhase === 'longBreak') setTimer(localLongBreak * 60);
 
       setStep(nextStep);
-      setCycleCount(Math.floor(nextStep / 6));
     }
   };
 
+  // go to previous phase in the timeline
+  const handlePrevStep = () => {
+    const prev = step === -1 ? timeline.length - 1 : (step - 1 + timeline.length) % timeline.length;
+    const prevPhase = timeline[prev] as 'stoody' | 'shortBreak' | 'longBreak';
+
+    if (step === 0 && cycleCount > 1) {
+      setCycleCount((c) => c - 1);
+    }
+
+    setStep(prev);
+    setPhase(prevPhase);
+    if (prevPhase === 'stoody') setTimer(localStoody * 60);
+    else if (prevPhase === 'shortBreak') setTimer(localShortBreak * 60);
+    else if (prevPhase === 'longBreak') setTimer(localLongBreak * 60);
+  };
+
+  const handleNextStep = () => {
+    const nextIndex = (step + 1) % timeline.length;
+    const nextPhase = timeline[nextIndex] as 'stoody' | 'shortBreak' | 'longBreak';
+    setNextPhase(nextPhase);
+  };
+
+  // --- Circular slider helpers (copied/adapted from CircularSlider) ---
+  const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v));
+
+  function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
+    const angleRad = ((angleDeg - 90) * Math.PI) / 180.0;
+    return { x: cx + r * Math.cos(angleRad), y: cy + r * Math.sin(angleRad) };
+  }
+
+  // Determine total seconds for current phase
+  const totalSeconds =
+    phase === 'stoody' ? localStoody * 60 : phase === 'shortBreak' ? localShortBreak * 60 : phase === 'longBreak' ? localLongBreak * 60 : 5;
+
+  const size = 420;
+  const center = size / 2;
+  const radius = center - 22;
+  const strokeWidth = 36;
+
+  const valueRatio = useMemo(() => clamp(timer / Math.max(1, totalSeconds), 0, 1), [timer, totalSeconds]);
+  const startAngle = 0;
+  const endAngle = useMemo(() => startAngle + valueRatio * 360, [valueRatio]);
+  const knobPos = useMemo(() => polarToCartesian(center, center, radius, endAngle), [center, radius, endAngle]);
+  const circumference = useMemo(() => 2 * Math.PI * radius, [radius]);
+  const dashOffset = useMemo(() => circumference * (1 - valueRatio), [circumference, valueRatio]);
+
+  // Note: removed displayAngle state to avoid an extra render per tick. Keep refs if
+  // we want to implement a non-state smoothing using rAF later.
+
+  const isAtStart = cycleCount === 1 && step <= 0;
+  const isFinished = cycleCount === cycles && phase === 'longBreak';
+
   return (
-    <div>
-      <div className="mb-2 text-xl font-mono">
-        {phase === 'work' && `Work`} 
-        {phase === 'shortBreak' && `Short Break`} 
-        {phase === 'longBreak' && `Long Break`} 
-        {phase === 'transition' && `Transition`}
-        <span className={isRunning ? 'ml-2 text-green-600' : 'ml-2 text-red-600'}>
-          {isRunning ? '● Running' : '⏸ Paused'}
-        </span>
-      </div>
-      <div className="mb-6 text-4xl font-mono">
-        {`${String(Math.floor(timer / 60)).padStart(2, '0')}:${String(timer % 60).padStart(2, '0')}`}
-      </div>
+    <div className="flex flex-col items-center gap-4">
+      <h1 className="text-2xl text-black inter-bold">Cycle: {cycleCount} of {cycles}: {percentComplete}% complete</h1>
       <div className="flex gap-4">
-        <button
-          onClick={isRunning ? handleStop : handleStart}
-          disabled={phase === 'longBreak'}
-          className={
-            `${isRunning ? 'bg-red-500' : 'bg-green-500'} text-white px-4 py-2 rounded cursor-pointer`
-          }
-        >
-          {isRunning ? 'Stop' : 'Start'}
-        </button>
-        <button onClick={handleReset} className="bg-gray-500 text-white px-4 py-2 rounded cursor-pointer">Reset</button>
-        <button onClick={handleSkip} className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer">Skip</button>
+            <PhaseButton onClick={setNextPhase} currentPhase={phase} phase = "stoody" />
+            <PhaseButton onClick={setNextPhase} currentPhase={phase} phase = "shortBreak" />
+            <PhaseButton onClick={setNextPhase} currentPhase={phase} phase = "longBreak" />
+          </div>
+      <div className="relative my-2" style={{ width: size, height: size }}>
+        {!isAtStart && ( // if at the start
+          <button
+            aria-label="Previous step"
+            className="absolute left-[-64px] top-1/2 -translate-y-1/2 p-2 rounded-md bg-white shadow-md hover:bg-gray-50"
+            onClick={handlePrevStep}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+        )}
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          {/* Track */}
+          <circle cx={center} cy={center} r={radius} stroke="#E6E6E6" strokeWidth={strokeWidth} fill="none" />
+          {/** gradients are static; memoize so they're not recreated each render */}
+          {useMemo(() => (
+            <defs>
+              <linearGradient id="stoodyGradient" gradientTransform="rotate(90)">
+                <stop offset="0%" stopColor="#C18FFF" />
+                <stop offset="100%" stopColor="#8B5CF6" />
+              </linearGradient>
+              <linearGradient id="shortBreakGradient" gradientTransform="rotate(90)">
+                <stop offset="0%" stopColor="#2BB5A3" />
+                <stop offset="100%" stopColor="#1E8771" />
+              </linearGradient>
+              <linearGradient id="longBreakGradient" gradientTransform="rotate(90)">
+                <stop offset="0%" stopColor="#4CAF50" />
+                <stop offset="100%" stopColor="#3D9440" />
+              </linearGradient>
+              <linearGradient id="transitionGradient" gradientTransform="rotate(90)">
+                <stop offset="0%" stopColor="#9CA3AF" />
+                <stop offset="100%" stopColor="#6B7280" />
+              </linearGradient>
+            </defs>
+          ), [])}
+
+          {/* inner ticks every 1/8 (45deg) - memoized */}
+          {useMemo(() =>
+            Array.from({ length: 8 }, (_, i) => {
+              const angle = i * 45;
+              const inner = polarToCartesian(center, center, radius - strokeWidth / 2 - 10, angle);
+              const outer = polarToCartesian(center, center, radius - strokeWidth / 2 - 20, angle);
+              return (
+                <line
+                  key={i}
+                  x1={inner.x}
+                  y1={inner.y}
+                  x2={outer.x}
+                  y2={outer.y}
+                  stroke="#D1D5DB"
+                  strokeWidth={4}
+                  strokeLinecap="round"
+                />
+              );
+            }), [center, radius, strokeWidth])}
+
+          {/* Animated progress using stroke-dashoffset for smooth transitions */}
+          <circle
+            cx={center}
+            cy={center}
+            r={radius}
+            stroke= {
+              phase === "stoody" ? "url(#stoodyGradient)"
+              : phase === "shortBreak" ? "url(#shortBreakGradient)"
+              : phase === "longBreak" ? "url(#longBreakGradient)"
+              : "url(#transitionGradient)"}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={dashOffset}
+            transform={`rotate(-90 ${center} ${center})`}
+            style={{ transition: 'stroke-dashoffset 360ms cubic-bezier(0.22,1,0.36,1)', willChange: 'stroke-dashoffset' }}
+          />
+
+          {/* Center label is rendered visually by overlay div below (keeps SVG purely decorative) */}
+        </svg>
+        {/* Overlay the time and stoody icon centered inside the circular timer */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <button
+              aria-label="Mute timer audio"
+              title="Mute timer audio"
+              onClick={() => audioToggle()}
+              className="p-1 rounded-md hover:bg-black/5 cursor-pointer"
+            >
+              <AudioIcon
+                silent={!audioOn}
+                phase={phase}
+                width={24}
+                height={24}
+              />
+            </button>
+            <span className="text-4xl font-extrabold inter-bold">{`${String(Math.floor(timer / 60)).padStart(2, '0')}:${String(timer % 60).padStart(2, '0')}`}</span>
+            <button
+              aria-label="Edit session settings"
+              title="Edit session settings"
+              onClick={() => setEditOpen(true)}
+              className="p-1 rounded-md hover:bg-black/5 cursor-pointer"
+            >
+              <StoodyIcon
+                width={24}
+                height={24}
+                phase={phase}
+              />
+            </button>
+          </div>
+        </div>
+        {!isFinished && ( // if not at the end, show the button
+          <button
+            aria-label="Next step"
+            className="absolute right-[-64px] top-1/2 -translate-y-1/2 p-2 rounded-md bg-white shadow-md hover:bg-gray-50"
+            onClick={handleNextStep}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        )}
       </div>
-      <div className="mt-2">Cycle: {cycleCount} / {cycles}</div>
-      <div className="mt-2">Step: {step}</div>
+
+  <div className="flex flex-col items-center inter-regular text-[#6B7280]"> Next: {nextPhaseLabel}</div>
+
+      <div className="flex gap-16">
+        <Reset 
+          onClick={handleReset}
+        />
+        <Playback 
+          onClick={handlePausePlay}
+          sessionState={phase}
+          isRunning={isRunning}
+        />
+        <Skip
+          onClick={handleSkip}
+        />
+      </div>
+      
     </div>
   );
 }
+
