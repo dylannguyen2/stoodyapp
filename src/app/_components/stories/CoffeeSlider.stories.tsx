@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import CoffeeSlider from '../inputs/CoffeeSlider';
+import CoffeeSlider from '../inputs/SessionInputs/CoffeeSlider';
 import type { Meta, StoryObj } from '@storybook/react';
 
 const meta: Meta<typeof CoffeeSlider> = {

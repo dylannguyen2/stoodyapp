@@ -42,7 +42,7 @@ export default function CoffeeSlider({
 
   return (
     <div
-      className={`flex flex-col items-center gap-4 transform transition-transform transition-opacity duration-200 ease-out ${
+      className={`flex flex-col items-center gap-2 transform transition-transform transition-opacity duration-200 ease-out ${
         isExiting
           ? 'opacity-0 scale-95 translate-y-2'
           : mounted
@@ -142,7 +142,7 @@ export default function CoffeeSlider({
         </div>
       </div>
 
-      <div className="w-full flex justify-center">
+      <div className="w-full flex justify-center -mt-4">
         <FlatSlider value={value} onChange={onChange ?? (() => {})} min={min} max={maxMinutes} step={step} />
       </div>
     </div>

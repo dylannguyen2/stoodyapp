@@ -60,7 +60,7 @@ export default function StickyNotes({ name, setName, nextSessionState, handleSta
   };
 
   return (
-    <div className="relative w-72 h-72 group cursor-pointer mx-auto">
+    <div className="relative w-84 h-84 group cursor-pointer mx-auto">
       {[3, 2, 1].map((num) => {
         const exitTransforms: Record<number, string> = {
           // fade to a slightly visible state instead of fully transparent

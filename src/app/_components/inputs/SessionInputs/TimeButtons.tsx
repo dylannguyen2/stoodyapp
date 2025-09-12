@@ -1,5 +1,5 @@
 import React from 'react';
-import TimeButton from './SessionInputs/TimeButton';
+import TimeButton from './TimeButton';
 
 interface TimeButtonsProps {
   onChange: (v: number) => void;

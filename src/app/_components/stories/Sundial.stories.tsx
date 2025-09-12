@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Sundial from '../inputs/Sundial';
+import Sundial from '../inputs/SessionInputs/Sundial';
 import type { Meta, StoryObj } from '@storybook/react';
 
 const meta: Meta<typeof Sundial> = {

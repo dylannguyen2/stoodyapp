@@ -4,12 +4,16 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from './_components/Navbar';
 import React from 'react';
-import TimeButtons from './_components/inputs/TimeButtons';
+import TimeButtons from './_components/inputs/SessionInputs/TimeButtons';
 import { useLocalStorage } from './_components/hooks/useLocalStorage';
 import LastPresetCard from './_components/cards/LastPresetCard';
 import FreshStartCard from './_components/cards/FreshStartCard';
-import SessionInput from './_components/inputs/SessionInput';
-import StateButtons from './_components/inputs/StateButtons';
+import SessionInput from './_components/inputs/SessionInputs/SessionInput';
+import LeftButton from './_components/inputs/SessionInputs/LeftButton';
+import RightButton from './_components/inputs/SessionInputs/RightButton';
+import EditUI from './_components/inputs/EditUI';
+import { AnimatePresence, motion } from 'framer-motion';
+
 
 export default function PageClient() {
   const router = useRouter();
@@ -28,7 +32,28 @@ export default function PageClient() {
 
   const [sessionCreateState, setSessionCreateState] = useState<SessionCreationState>(sessionCreationStates[1]);
   const [isExiting, setIsExiting] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [hasCachedPreset, setHasCachedPreset] = useState<boolean>(false);
+  // helper open/close for EditUI
+  const openEdit = () => setEditOpen(true);
+  const closeEdit = () => setEditOpen(false);
+
+  const handleEditSave = async (vals: { stoody: number; shortBreak: number; longBreak: number; cycles: number; name?: string }) => {
+    // persist into local storage-backed state so PageClient + LastPresetCard reflect changes
+    if (typeof vals.name === 'string') setName(vals.name);
+    setStoody(vals.stoody);
+    setShortBreak(vals.shortBreak);
+    setLongBreak(vals.longBreak);
+    setCycles(vals.cycles);
+
+    // update cached preset payload if present
+    try {
+      const payload = { name: vals.name ?? name, stoody: vals.stoody, shortBreak: vals.shortBreak, longBreak: vals.longBreak, cycles: vals.cycles, cachedAt: Date.now() };
+      localStorage.setItem('stoody_session_cached', JSON.stringify(payload));
+    } catch {}
+
+    setEditOpen(false);
+  };
 
   // ----------------------
   // Client-side hydration
@@ -90,7 +115,7 @@ export default function PageClient() {
       const prevIndex = i > 0 ? i - 1 : 0;
       return sessionCreationStates[prevIndex] as SessionCreationState;
     });
-};
+  };
 
   const nextSessionState = () => {
     setSessionCreateState((prev) => {
@@ -121,6 +146,30 @@ export default function PageClient() {
     exitedRef.current = false;
     setIsExiting(true);
   };
+
+  useEffect(() => {
+      const onKeyDown = (e: KeyboardEvent) => {
+        const target = e.target as HTMLElement | null;
+        if (target) {
+          const editable =
+            target instanceof HTMLInputElement ||
+            target instanceof HTMLTextAreaElement ||
+            target.isContentEditable;
+          if (editable) return;
+        }
+  
+        if (e.key === 'ArrowLeft' && sessionCreateState !== 'cached') {
+          e.preventDefault();
+          handlePrevClick();
+        } else if (e.key === 'ArrowRight' && sessionCreateState !== 'cached') {
+          e.preventDefault();
+          handleNextClick();
+        }
+      };
+  
+      window.addEventListener('keydown', onKeyDown);
+      return () => window.removeEventListener('keydown', onKeyDown);
+    }, [handlePrevClick, handleNextClick]);
 
   // ----------------------
   // Start session
@@ -158,10 +207,52 @@ export default function PageClient() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col pt-[80px]">
-      <Navbar />
+    <div className="min-h-screen flex flex-col">
+      <AnimatePresence>
+        {editOpen && (
+          <motion.div
+            className="fixed inset-0 z-60 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {/* Backdrop with blur */}
+            <motion.div
+              className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              onClick={closeEdit}
+            />
+
+            {/* Modal container */}
+            <motion.div
+              // allow a bit more room for the modal
+              className="relative z-10 w-full max-w-md mx-auto"
+               initial={{ opacity: 0, scale: 0.98 }}
+               animate={{ opacity: 1, scale: 1 }}
+               exit={{ opacity: 0, scale: 0.98 }}
+               transition={{ duration: 0.15 }}
+             >
+               <EditUI
+                initial={{
+                  stoody: stoody ?? 25,
+                  shortBreak: shortBreak ?? 5,
+                  longBreak: longBreak ?? 15,
+                  cycles: cycles ?? 4,
+                  name: name,
+                }}
+                onSave={handleEditSave}
+                onCancel={closeEdit}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* <Navbar /> */}
       {/* Headings take up half the space above input */}
-      <div className="flex items-center justify-center text-center mt-12 border border-red-500">
+      <div className="flex items-center justify-center text-center mt-8">
         <div>
           <h1 className="font-bold text-6xl">Study. Rest. Repeat.</h1>
           <h1 className="font-bold text-3xl gochi-hand-regular mt-2">
@@ -173,58 +264,74 @@ export default function PageClient() {
               ? "How long do you want to short break for?"
               : sessionCreateState === "longBreak"
               ? "How long do you want to long break for?"
-              : "How many cycles do you want to complete?"}
+              : sessionCreateState === "cycles"
+              ? "How many cycles do you want to complete?"
+              : ""}
           </h1>
         </div>
       </div>
-      <div className="flex-1 flex flex-col items-center justify-center border border-red-500">
-        {/* Fixed-size input area so the time buttons sit in a consistent spot */}
-          <div className="w-full h-[360px] flex items-center justify-center border border-green-200">
-            {sessionCreateState === 'cached' && (
-              <div className="flex flex-col items-center gap-4 w-full">
-                <LastPresetCard
-                  name={name}
-                  stoody={stoody}
-                  shortBreak={shortBreak}
-                  longBreak={longBreak}
-                  cycles={cycles}
-                  onClick={handleStartSession}
-                />
-                <FreshStartCard
-                  onClick={() => {applyDefaultPreset();}}
-                />
-              </div>
-            )}
-            <SessionInput
-              sessionCreateState={sessionCreateState}
+      <div className="flex-1 flex flex-col items-center">
+        {sessionCreateState === 'cached' && (
+          <div className="flex flex-col items-center gap-4 w-full">
+            <LastPresetCard
               name={name}
               stoody={stoody}
               shortBreak={shortBreak}
               longBreak={longBreak}
               cycles={cycles}
-              isExiting={isExiting}
-              setName={setName}
-              setStoody={setStoody}
-              setShortBreak={setShortBreak}
-              setLongBreak={setLongBreak}
-              setCycles={setCycles}
-              nextSessionState={nextSessionState}
-              handleStartSession={handleStartSession}
-              handleOnExited={handleOnExited}
+              onClick={handleStartSession}
+              onEdit={openEdit}
+            />
+            <FreshStartCard
+              onClick={() => {applyDefaultPreset();}}
             />
           </div>
+        )}
+        {sessionCreateState !== 'cached' && (
+          <>
+          <div className="w-full h-[360px] flex items-center justify-center border border-green-200">
+
+            {/* Wider group: buttons spread apart with SessionInput centered */}
+            <div className="flex items-center w-full max-w-3xl justify-between px-8">
+              
+              <LeftButton
+                sessionCreateState={sessionCreateState}
+                hasCachedPreset={hasCachedPreset}
+                handlePrevClick={handlePrevClick}
+                handleStartSession={handleStartSession}
+              />
+
+              <div className="flex-1 mx-6 flex justify-center">
+                <SessionInput
+                  sessionCreateState={sessionCreateState}
+                  name={name}
+                  stoody={stoody}
+                  shortBreak={shortBreak}
+                  longBreak={longBreak}
+                  cycles={cycles}
+                  isExiting={isExiting}
+                  setName={setName}
+                  setStoody={setStoody}
+                  setShortBreak={setShortBreak}
+                  setLongBreak={setLongBreak}
+                  setCycles={setCycles}
+                  nextSessionState={nextSessionState}
+                  handleStartSession={handleStartSession}
+                  handleOnExited={handleOnExited}
+                />
+              </div>
+
+              <RightButton
+                sessionCreateState={sessionCreateState}
+                handleNextClick={handleNextClick}
+                handleStartSession={handleStartSession}
+              />
+            </div>
+          </div>
           <div className="pt-8 flex justify-center min-h-[90px]">
-            {(sessionCreateState !== "name" && sessionCreateState !== "cached") && (
+            {(sessionCreateState !== "name") && (
                 <TimeButtons
-                  options={
-                    sessionCreateState === "stoody"
-                      ? [25, 30, 45, 60]
-                      : sessionCreateState === "shortBreak"
-                      ? [5, 10, 15, 30]
-                      : sessionCreateState === "longBreak"
-                      ? [15, 30, 45, 60]
-                      : [1, 2, 3, 4]
-                  }
+                  sessionCreateState={sessionCreateState}
                   value={
                     sessionCreateState === "stoody"
                       ? stoody
@@ -245,22 +352,14 @@ export default function PageClient() {
                   }
                   isExiting={isExiting}
                   onExited={handleOnExited}
-                  sessionCreateState={sessionCreateState}
                 />
 
             )}
           </div>
-          <div className="flex justify-center gap-10 relative z-50 pt-8">
-              <StateButtons
-                sessionCreateState={sessionCreateState}
-                hasCachedPreset={hasCachedPreset}
-                handlePrevClick={handlePrevClick}
-                handleNextClick={handleNextClick}
-                handleStartSession={handleStartSession}
-              />
-          </div>
+          </>
+        )}
 
-          {sessionCreateState}: {name} {stoody} {shortBreak} {longBreak} {cycles} cached:{hasCachedPreset.toString()}
+          {/* {sessionCreateState}: {name} {stoody} {shortBreak} {longBreak} {cycles} cached:{hasCachedPreset.toString()} */}
 
         </div>
     </div>

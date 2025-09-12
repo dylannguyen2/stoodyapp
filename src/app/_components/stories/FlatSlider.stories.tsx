@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import FlatSlider from '../inputs/FlatSlider';
+import FlatSlider from '../inputs/SessionInputs/FlatSlider';
 import type { Meta, StoryObj } from '@storybook/react';
 
 const meta: Meta<typeof FlatSlider> = {

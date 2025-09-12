@@ -5,6 +5,9 @@ import Playback from './controls/Playback';
 import PhaseButton from 'db/app/_components/controls/Phase';
 import StoodyIcon from './icons/StoodyIcon';
 import AudioIcon from './icons/AudioIcon';
+import CircularButton from './inputs/CircularButton';
+import BackIcon from './icons/BackIcon';
+import NextIcon from './icons/NextIcon';
 // import EditUI from './inputs/EditUI';
 
 
@@ -225,16 +228,17 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
       const nextPhase = timeline[nextStep] as 'stoody' | 'shortBreak' | 'longBreak';
 
       setPhase(nextPhase);
-  if (nextPhase === 'stoody') setTimer(localStoody * 60);
-  else if (nextPhase === 'shortBreak') setTimer(localShortBreak * 60);
-  else if (nextPhase === 'longBreak') setTimer(localLongBreak * 60);
+    if (nextPhase === 'stoody') setTimer(localStoody * 60);
+    else if (nextPhase === 'shortBreak') setTimer(localShortBreak * 60);
+    else if (nextPhase === 'longBreak') setTimer(localLongBreak * 60);
 
-      setStep(nextStep);
-    }
-  };
+        setStep(nextStep);
+      }
+    };
 
   // go to previous phase in the timeline
   const handlePrevStep = () => {
+    if (step === 0 && cycleCount === 1) return;
     const prev = step === -1 ? timeline.length - 1 : (step - 1 + timeline.length) % timeline.length;
     const prevPhase = timeline[prev] as 'stoody' | 'shortBreak' | 'longBreak';
 
@@ -250,6 +254,7 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
   };
 
   const handleNextStep = () => {
+    if (step === (timeline.length - 1) && cycleCount === cycles) return;
     const nextIndex = (step + 1) % timeline.length;
     const nextPhase = timeline[nextIndex] as 'stoody' | 'shortBreak' | 'longBreak';
     setNextPhase(nextPhase);
@@ -263,49 +268,147 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
     return { x: cx + r * Math.cos(angleRad), y: cy + r * Math.sin(angleRad) };
   }
 
-  // Determine total seconds for current phase
   const totalSeconds =
     phase === 'stoody' ? localStoody * 60 : phase === 'shortBreak' ? localShortBreak * 60 : phase === 'longBreak' ? localLongBreak * 60 : 5;
 
-  const size = 420;
-  const center = size / 2;
-  const radius = center - 22;
-  const strokeWidth = 36;
+  const BASE_SIZE = 420;
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState<number>(BASE_SIZE);
+
+   useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const editable =
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement ||
+          target.isContentEditable;
+        if (editable) return;
+      }
+
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        handlePausePlay();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handlePrevStep();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleNextStep();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [handlePausePlay, handlePrevStep, handleNextStep]);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const el = containerRef.current;
+    const ro = new ResizeObserver((entries) => {
+      if (entries[0] && entries[0].contentRect) {
+        const w = Math.round(entries[0].contentRect.width);
+        const clamped = Math.max(200, Math.min(w, 900));
+        setSize(clamped);
+      }
+    });
+    ro.observe(el);
+    setSize(Math.round((el.getBoundingClientRect().width || BASE_SIZE)));
+    return () => ro.disconnect();
+  }, []);
+
+  //////////////////////////////////////////////////////////////////////////
+  // UI SIZING
+  //////////////////////////////////////////////////////////////////////////
+
+  const uiScale = Math.max(0.3, Math.min(2, 0.7 * size / BASE_SIZE)); // used by Phase/controls/arrows
+
+  // circle size ratio inside the measured container (change this to make circle smaller/larger)
+  const CIRCLE_RATIO = 0.60;
+  const MIN_SVG_SIZE = 240;
+  const svgSize = Math.max(MIN_SVG_SIZE, Math.round(size * CIRCLE_RATIO));
+
+  // circle-specific scale (used for stroke/radius/inner icons)
+  const circleScale = Math.max(0.3, Math.min(2, 1.2 * svgSize / BASE_SIZE));
+  const center = svgSize / 2;
+  const strokeWidth = Math.max(4, Math.round(27 * circleScale));
+  const radius = Math.max(10, Math.floor(center - strokeWidth / 2 - Math.round(8 * circleScale)));
+  const iconSize = Math.max(12, Math.round(28 * circleScale)); // sizes for audio/edit icons inside circle
+
+  const PHASE_BASE = 140;
+  const phaseButtonSize = Math.max(120, Math.round(PHASE_BASE * uiScale));
+
+  const CONTROL_BASE = 56;
+  const controlSize = Math.max(CONTROL_BASE, Math.round(CONTROL_BASE * 0.8 * uiScale));
+
+  const ARROW_BASE = 48;
+  const arrowSize = Math.max(ARROW_BASE, Math.round(ARROW_BASE * 0.8 * uiScale));
+  const gapSize = Math.max(48, Math.round(48 * uiScale));
 
   const valueRatio = useMemo(() => clamp(timer / Math.max(1, totalSeconds), 0, 1), [timer, totalSeconds]);
   const startAngle = 0;
   const endAngle = useMemo(() => startAngle + valueRatio * 360, [valueRatio]);
-  const knobPos = useMemo(() => polarToCartesian(center, center, radius, endAngle), [center, radius, endAngle]);
   const circumference = useMemo(() => 2 * Math.PI * radius, [radius]);
   const dashOffset = useMemo(() => circumference * (1 - valueRatio), [circumference, valueRatio]);
-
-  // Note: removed displayAngle state to avoid an extra render per tick. Keep refs if
-  // we want to implement a non-state smoothing using rAF later.
 
   const isAtStart = cycleCount === 1 && step <= 0;
   const isFinished = cycleCount === cycles && phase === 'longBreak';
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-2">
       <h1 className="text-2xl text-black inter-bold">Cycle: {cycleCount} of {cycles}: {percentComplete}% complete</h1>
       <div className="flex gap-4">
-            <PhaseButton onClick={setNextPhase} currentPhase={phase} phase = "stoody" />
-            <PhaseButton onClick={setNextPhase} currentPhase={phase} phase = "shortBreak" />
-            <PhaseButton onClick={setNextPhase} currentPhase={phase} phase = "longBreak" />
-          </div>
-      <div className="relative my-2" style={{ width: size, height: size }}>
-        {!isAtStart && ( // if at the start
-          <button
-            aria-label="Previous step"
-            className="absolute left-[-64px] top-1/2 -translate-y-1/2 p-2 rounded-md bg-white shadow-md hover:bg-gray-50"
-            onClick={handlePrevStep}
+        <PhaseButton onClick={setNextPhase} currentPhase={phase} phase="stoody" size={phaseButtonSize} />
+        <PhaseButton onClick={setNextPhase} currentPhase={phase} phase="shortBreak" size={phaseButtonSize} />
+        <PhaseButton onClick={setNextPhase} currentPhase={phase} phase="longBreak" size={phaseButtonSize} />
+      </div>
+      
+      <div
+        ref={containerRef}
+        className="relative flex items-center justify-center gap-4 my-1 px-4"
+        style={{ width: 'clamp(260px, 55vw, 880px)'}}
+      >
+        <div
+          className="flex-shrink-0"
+          style={{ width: `${arrowSize}px`, height: `${arrowSize}px`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          {(!isAtStart && size > 280) && (
+            <CircularButton
+              icon={<BackIcon />}
+              onClick={handlePrevStep}
+              gradient={
+                phase === "stoody" ? "from-[#C18FFF] to-[#8B5CF6]"
+                : phase === "shortBreak" ? "from-[#2BB5A3] to-[#1E8771]"
+                : phase === "longBreak" ? "from-[#4CAF50] to-[#3D9440]"
+                : "from-[#9CA3AF] to-[#6B7280]"
+               }
+               shadow={
+                phase === "stoody" ? "8B5CF6"
+                : phase === "shortBreak" ? "1E8771"
+                : phase === "longBreak" ? "3D9440"
+                : "6B7280"
+               }
+              title="Back"
+              size={arrowSize}
+            />
+          )}
+        </div>
+        
+        {/* svg wrapper: don't let flex shrink it */}
+        <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg
+            width={svgSize}
+            height={svgSize}
+            viewBox={`0 0 ${svgSize} ${svgSize}`}
+            preserveAspectRatio="xMidYMid meet"
+            className="block"
+            style={{
+              minWidth: `${MIN_SVG_SIZE}px`,
+              minHeight: `${MIN_SVG_SIZE}px`,
+              flexShrink: 0,
+              display: 'block',
+            }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-        )}
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
           {/* Track */}
           <circle cx={center} cy={center} r={radius} stroke="#E6E6E6" strokeWidth={strokeWidth} fill="none" />
           {/** gradients are static; memoize so they're not recreated each render */}
@@ -330,7 +433,6 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
             </defs>
           ), [])}
 
-          {/* inner ticks every 1/8 (45deg) - memoized */}
           {useMemo(() =>
             Array.from({ length: 8 }, (_, i) => {
               const angle = i * 45;
@@ -368,70 +470,86 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
             transform={`rotate(-90 ${center} ${center})`}
             style={{ transition: 'stroke-dashoffset 360ms cubic-bezier(0.22,1,0.36,1)', willChange: 'stroke-dashoffset' }}
           />
-
-          {/* Center label is rendered visually by overlay div below (keeps SVG purely decorative) */}
-        </svg>
-        {/* Overlay the time and stoody icon centered inside the circular timer */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="flex items-center gap-2 pointer-events-auto">
-            <button
-              aria-label="Mute timer audio"
-              title="Mute timer audio"
-              onClick={() => audioToggle()}
-              className="p-1 rounded-md hover:bg-black/5 cursor-pointer"
-            >
-              <AudioIcon
-                silent={!audioOn}
-                phase={phase}
-                width={24}
-                height={24}
-              />
-            </button>
-            <span className="text-4xl font-extrabold inter-bold">{`${String(Math.floor(timer / 60)).padStart(2, '0')}:${String(timer % 60).padStart(2, '0')}`}</span>
-            <button
-              aria-label="Edit session settings"
-              title="Edit session settings"
-              onClick={() => setEditOpen(true)}
-              className="p-1 rounded-md hover:bg-black/5 cursor-pointer"
-            >
-              <StoodyIcon
-                width={24}
-                height={24}
-                phase={phase}
-              />
-            </button>
-          </div>
+          </svg>
         </div>
-        {!isFinished && ( // if not at the end, show the button
-          <button
-            aria-label="Next step"
-            className="absolute right-[-64px] top-1/2 -translate-y-1/2 p-2 rounded-md bg-white shadow-md hover:bg-gray-50"
-            onClick={handleNextStep}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-        )}
+
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+           <div className="flex items-center gap-2 pointer-events-auto">
+             {size > 350 && (<button
+               aria-label="Mute timer audio"
+               title="Mute timer audio"
+               onClick={() => audioToggle()}
+               className="p-1 rounded-md hover:bg-black/5 cursor-pointer"
+               style={{ width: iconSize + 6, height: iconSize + 6 }}
+             >
+               <AudioIcon
+                 silent={!audioOn}
+                 phase={phase}
+                 width={iconSize}
+                 height={iconSize}
+               />
+             </button>
+             )}
+ 
+             <span style={{ fontSize: Math.max(18, Math.round(28 * uiScale)) }} className="font-extrabold inter-bold">{`${String(Math.floor(timer / 60)).padStart(2, '0')}:${String(timer % 60).padStart(2, '0')}`}</span>
+ 
+             {size > 350 && (<button
+               aria-label="Edit session settings"
+               title="Edit session settings"
+               onClick={() => setEditOpen(true)}
+               className="p-1 rounded-md hover:bg-black/5 cursor-pointer"
+               style={{ width: iconSize + 6, height: iconSize + 6 }}
+             >
+               <StoodyIcon
+                 width={iconSize}
+                 height={iconSize}
+                 phase={phase}
+               />
+             </button>
+             )}
+           </div>
+         </div>
+         
+ 
+         {/* next button: positioned to the right */}
+         
+           <div
+             className="flex-shrink-0"
+             style={{ width: `${arrowSize}px`, height: `${arrowSize}px`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+           >
+             {(!isFinished && size > 280) && (
+             <CircularButton
+               icon={<NextIcon />}
+               onClick={handleNextStep}
+               gradient={
+                phase === "stoody" ? "from-[#C18FFF] to-[#8B5CF6]"
+                : phase === "shortBreak" ? "from-[#2BB5A3] to-[#1E8771]"
+                : phase === "longBreak" ? "from-[#4CAF50] to-[#3D9440]"
+                : "from-[#9CA3AF] to-[#6B7280]"
+               }
+               shadow={
+                phase === "stoody" ? "8B5CF6"
+                : phase === "shortBreak" ? "1E8771"
+                : phase === "longBreak" ? "3D9440"
+                : "6B7280"
+               }
+               title="Next"
+               size={arrowSize}
+             />
+             )}
+           </div>
+        
       </div>
 
-  <div className="flex flex-col items-center inter-regular text-[#6B7280]"> Next: {nextPhaseLabel}</div>
-
-      <div className="flex gap-16">
-        <Reset 
-          onClick={handleReset}
-        />
-        <Playback 
-          onClick={handlePausePlay}
-          sessionState={phase}
-          isRunning={isRunning}
-        />
-        <Skip
-          onClick={handleSkip}
-        />
+      <div className="flex mt-1" style={{ gap: `${gapSize}px` }}>
+        <Reset onClick={handleReset} size={controlSize} />
+        <Playback onClick={handlePausePlay} sessionState={phase} isRunning={isRunning} size={controlSize} />
+        <Skip onClick={handleSkip} size={controlSize} />
       </div>
       
-    </div>
-  );
-}
+     </div>
+   );
+ }
+
+
 

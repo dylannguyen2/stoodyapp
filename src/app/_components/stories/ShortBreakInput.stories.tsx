@@ -1,4 +1,4 @@
-import ShortBreakInput from '../inputs/ShortBreakInput';
+import ShortBreakInput from '../inputs/SessionInputs/ShortBreakInput';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 

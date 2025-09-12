@@ -1,4 +1,4 @@
-import LongBreakInput from '../inputs/LongBreakInput';
+import LongBreakInput from '../inputs/SessionInputs/LongBreakInput';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 

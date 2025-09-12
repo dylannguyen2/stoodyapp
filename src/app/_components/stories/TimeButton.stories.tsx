@@ -1,4 +1,4 @@
-import TimeButton from '../inputs/TimeButton';
+import TimeButton from '../inputs/SessionInputs/TimeButton';
 import type { Meta, StoryObj } from '@storybook/react';
 
 const meta: Meta<typeof TimeButton> = {

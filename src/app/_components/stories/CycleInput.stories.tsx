@@ -1,4 +1,4 @@
-import CycleInput from '../inputs/CycleInput';
+import CycleInput from '../inputs/SessionInputs/CycleInput';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 

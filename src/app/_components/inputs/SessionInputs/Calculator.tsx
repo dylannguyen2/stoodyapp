@@ -159,16 +159,16 @@ export default function CalculatorCycles({ cycles, setCycles, isExiting = false,
                   <button
                     onClick={() => handlePress(b === "÷" ? "/" : b === "×" ? "*" : b)}
                     className={`
-                      relative w-full h-8 rocunded-xl flex items-center justify-center overflow-hidden
+                      relative w-full h-8 rounded-xl flex items-center justify-center overflow-hidden
                       transition-all duration-150 cursor-pointer
                       ${
                         b === "C" || b === "⌫"
                           ? pressedButton === b
-                            ? 'translate-y-[4px] shadow-[0_0px_0px_rgba(220,38,38,0.55)] bg-gradient-to-b from-[#FF5A5A] to-[#DC2626]'
-                            : 'bg-gradient-to-b from-[#FF5A5A] to-[#DC2626] shadow-[0_4px_0px_rgba(220,38,38,0.5)] hover:translate-y-[2px] hover:shadow-[0_2px_0px_rgba(220,38,38,0.55)]'
+                            ? 'translate-y-[4px] shadow-[0_0px_0px_#AF1010] bg-gradient-to-b from-[#FF5A5A] to-[#DC2626]'
+                            : 'bg-gradient-to-b from-[#FF5A5A] to-[#DC2626] shadow-[0_4px_0px_#AF1010] hover:translate-y-[2px] hover:shadow-[0_2px_0px_#AF1010]'
                           : pressedButton === b
                             ? 'translate-y-[4px] shadow-[0_0px_0px_rgba(196,156,207,0.4)] bg-[#E1BEE7]'
-                            : 'bg-[#E1BEE7] hover:bg-[#F1C4F1] active:bg-[#E1BEE7] shadow-[0_4px_0px_rgba(196,156,207,0.4)] hover:translate-y-[2px] hover:shadow-[0_2px_0px_rgba(196,156,207,0.4)]'
+                            : 'bg-[#E1BEE7] active:bg-[#E1BEE7] shadow-[0_4px_0px_rgba(196,156,207,0.4)] hover:translate-y-[2px] hover:shadow-[0_2px_0px_rgba(196,156,207,0.4)]'
                       }
                     `}
                   >
@@ -198,7 +198,7 @@ export default function CalculatorCycles({ cycles, setCycles, isExiting = false,
               col-span-4 h-8 rounded-xl bg-gradient-to-b from-[#8B5CF6] to-[#6931b0]
               text-white font-bold text-lg
               transition-all duration-150
-              ${pressedButton === "=" ? 'translate-y-1 shadow-[0_0px_0px_rgba(139,92,246,0.6)]' : 'shadow-[0_4px_0px_rgba(139,92,246,0.6)] hover:translate-y-[2px] hover:shadow-[0_2px_0px_rgba(139,92,246,0.6)]'}
+              ${pressedButton === "=" ? 'translate-y-1 shadow-[0_0px_0px_#5d21c2)]' : 'shadow-[0_4px_0px_#5d21c2] hover:translate-y-[2px] hover:shadow-[0_2px_0px_#5d21c2]'}
             `}
           >
             =

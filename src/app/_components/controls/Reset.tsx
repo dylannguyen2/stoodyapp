@@ -17,6 +17,7 @@ export default function Reset({ onClick, size = 56, ariaLabel = 'Reset' }: Reset
         type="button"
         onClick={onClick}
         aria-label={ariaLabel}
+        title="Reset"
         className={`w-full h-full rounded-full bg-gradient-to-b from-[#F87171] to-[#DC2626] shadow-[0_4px_0px_#B91C1C] hover:shadow-[0_2px_0px_#B91C1C] hover:translate-y-[2px] active:shadow-[0_0px_0px_#B91C1C] active:translate-y-[4px] transition-all duration-150 cursor-pointer flex items-center justify-center`}
       >
         {/* wider reset arrow: rounded stroke */}

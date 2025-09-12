@@ -15,7 +15,7 @@ export default function StickyNotesWrapper() {
   if (!isWide) return null;
 
   return (
-    <div className="block fixed left-4 top-16 z-50">
+    <div className="block fixed left-1/7 top-16 z-50">
       <StickyNotesCycle width={72} height={96} />
     </div>
   );

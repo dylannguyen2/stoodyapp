@@ -18,7 +18,7 @@ export default function ShortBreakInput({
 }: StoodyInputProps) {
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="w-full flex justify-center">
+      <div className="w-full flex justify-center pt-8">
         <CoffeeSlider
           value={value}
           onChange={onChange}

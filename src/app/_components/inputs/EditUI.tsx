@@ -7,6 +7,7 @@ type Values = {
   shortBreak: number;
   longBreak: number;
   cycles: number;
+  name?: string;
 };
 
 type Props = {
@@ -53,7 +54,7 @@ export default function EditUI({ initial = {}, onSave, onCancel }: Props) {
 
   return (
     <motion.div
-      className="max-w-sm w-full p-6 bg-white rounded-2xl shadow-xl"
+      className="max-w-md w-full p-6 bg-white rounded-2xl shadow-xl"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
@@ -125,7 +126,7 @@ export default function EditUI({ initial = {}, onSave, onCancel }: Props) {
 
       {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
-      <div className="mt-6 flex justify-between items-center">
+      <div className="mt-6 flex justify-center items-center">
         <div className="flex gap-3">
           <Button
             onClick={onCancel ?? (() => {})}

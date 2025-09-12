@@ -1,7 +1,7 @@
 import StickyNotes from "./StickyNotes";
 import StoodyInput from "./StoodyInput";
 import ShortBreakInput from "./ShortBreakInput";
-import LongBreakInput from "./LongBreakInput";
+import LongBreakInput from "../SessionInputs/LongBreakInput";
 import CycleInput from "./CycleInput";
 
 interface SessionInputProps {

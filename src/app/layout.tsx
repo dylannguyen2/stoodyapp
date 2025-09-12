@@ -26,29 +26,27 @@ export default function RootLayout({
 
         {/* Background Gradient + Grid */}
         <svg
-          className="absolute inset-0 w-full h-full -z-10"
-          width="100%"
-          height="100%"
+          className="fixed inset-0 w-full h-full -z-10" // changed absolute -> fixed
         >
-          <defs>
-            {/* Linear gradient background */}
-            <linearGradient id="bgGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#FFFFFF" />
-              <stop offset="100%" stopColor="#F3F4F6" />
-            </linearGradient>
-
-            {/* Grid pattern */}
-            <pattern id="grid" width="70" height="70" patternUnits="userSpaceOnUse">
-              <path d="M 70 0 L 0 0 0 70" fill="none" stroke="#e0e0e0" strokeWidth="1" />
-            </pattern>
-          </defs>
-
-          {/* Gradient background */}
-          <rect width="100%" height="100%" fill="url(#bgGradient)" />
-
-          {/* Grid overlay */}
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
+           <defs>
+             {/* Linear gradient background */}
+             <linearGradient id="bgGradient" x1="0" y1="0" x2="0" y2="1">
+               <stop offset="0%" stopColor="#FFFFFF" />
+               <stop offset="100%" stopColor="#F3F4F6" />
+             </linearGradient>
+ 
+             {/* Grid pattern */}
+             <pattern id="grid" width="70" height="70" patternUnits="userSpaceOnUse">
+               <path d="M 70 0 L 0 0 0 70" fill="none" stroke="#e0e0e0" strokeWidth="1" />
+             </pattern>
+           </defs>
+ 
+           {/* Gradient background */}
+           <rect width="100%" height="100%" fill="url(#bgGradient)" />
+ 
+           {/* Grid overlay */}
+           <rect width="100%" height="100%" fill="url(#grid)" />
+         </svg>
 
         {/* Page content */}
         <TRPCReactProvider>

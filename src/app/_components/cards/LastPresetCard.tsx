@@ -4,17 +4,17 @@ import EditIcon from "../icons/EditIcon"
 import StoodentIcon from "../icons/StoodentIcon"
 import LongBreakIcon from "../icons/LongBreakIcon"
 import CycleIcon from "../icons/CycleIcon"
-import QuickStartButton from "../inputs/QuickStartButton"
-
+import Button from "../inputs/Button"
 interface LastPresetCardProps {
   name: string;
   stoody: number;
   shortBreak: number;
   longBreak: number;
   cycles: number;
-  onClick?: () => void;
+  onClick: () => void;
+  onEdit: () => void;
 }
-export default function LastPresetCard({ name, stoody, shortBreak, longBreak, cycles, onClick }: LastPresetCardProps) {
+export default function LastPresetCard({ name, stoody, shortBreak, longBreak, cycles, onClick, onEdit }: LastPresetCardProps) {
   return (
     <div className="relative w-2/5 bg-white rounded-lg shadow-md border border-[#E0E0E0] p-4">
       {/* Title + edit button container */}
@@ -25,7 +25,7 @@ export default function LastPresetCard({ name, stoody, shortBreak, longBreak, cy
         <button
           aria-label="Edit preset"
           className="absolute right-0 p-2 text-gray-600 cursor-pointer"
-          onClick={() => { /* open edit UI */ }}
+          onClick={onEdit}
         >
           <EditIcon />
         </button>
@@ -61,9 +61,11 @@ export default function LastPresetCard({ name, stoody, shortBreak, longBreak, cy
 
       {/* Buttons */}
       <div className="mt-4 flex justify-end">
-        <QuickStartButton
-          handleClick={onClick ?? (() => {})}
+        <Button 
           text="Quick Start"
+          onClick={onClick}
+          gradient="from-[#00C2FF] to-[#0077FF]"
+          shadow="005bb5"
         />
       </div>
   </div>

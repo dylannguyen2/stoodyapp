@@ -22,6 +22,7 @@ export default function Playback({ onClick, size = 56, ariaLabel = 'Pause', sess
         type="button"
         onClick={onClick}
         aria-label={ariaLabel}
+        title={isRunning ? "Pause" : "Play"}
         className={`w-full h-full rounded-full bg-gradient-to-b ${colour} active:translate-y-[4px] transition-all duration-150 cursor-pointer flex items-center justify-center`}
       >
         {/* simple pause icon */}
