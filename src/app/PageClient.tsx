@@ -166,7 +166,7 @@ export default function PageClient() {
           if (editable) return;
         }
   
-        if (e.key === 'ArrowLeft' && sessionCreateState !== 'cached') {
+        if (e.key === 'ArrowLeft' && sessionCreateState !== 'cached' && !(sessionCreateState === 'name' && !hasCachedPreset)) {
           e.preventDefault();
           handlePrevClick();
         } else if (e.key === 'ArrowRight' && sessionCreateState !== 'cached') {
@@ -225,9 +225,12 @@ export default function PageClient() {
   // card width: 1/3 of viewport width (clamped to sensible min/max)
   const cardThird = Math.round(Math.max(240, Math.min(680, width / 3)));
 
+  if (!hydrated || width === 0 || height === 0) {
+    return null;
+  }
+
   return (
     <div className="w-screen h-screen flex flex-col">
-      {timeSize}
       <AnimatePresence>
         {editOpen && (
           <motion.div
