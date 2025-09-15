@@ -8,8 +8,6 @@ type ResetProps = {
 };
 
 export default function Reset({ onClick, size = 56, ariaLabel = 'Reset' }: ResetProps) {
-  const base = '#9CA3AF';
-  const hover = '#A8ACB0';
 
   return (
     <div className="relative z-30" style={{ width: size, height: size }}>

@@ -9,16 +9,22 @@ import BroomIcon from "./icons/BroomIcon";
 type Task = { id: string; text: string; done: boolean };
 
 const colors = ["#C18FFF", "#5EB1FF", "#FFC645"];
-const maxTasksPerCard = 5;
 const maxVisibleDots = 5;
+
+// default fallback item height (px) used if measurement fails
+const FALLBACK_ITEM_HEIGHT = 40;
 
 export default function StickyNotesCycle({width = 72, height = 72}: {width?: number | string, height?: number | string}) {
   const [index, setIndex] = useState(0);
   const [tasks, setTasks] = useLocalStorage<Task[]>("stoody_tasks_all", []);
+  const [maxTasksPerCard, setMaxTasksPerCard] = useState<number>(5);
   const [input, setInput] = useState("");
   const [expandedTask, setExpandedTask] = useState<Task | null>(null); // For modal
   const inputRef = useRef<HTMLInputElement>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [availableListHeight, setAvailableListHeight] = useState<number | null>(null);
 
+  // compute task pages using the dynamic maxTasksPerCard
   const tasksList: Task[][] = [];
   const totalCards = Math.max(Math.ceil(tasks.length / maxTasksPerCard), 3);
   for (let i = 0; i < totalCards; i++) {
@@ -27,6 +33,47 @@ export default function StickyNotesCycle({width = 72, height = 72}: {width?: num
 
   const [pageCount, setPageCount] = useLocalStorage<number>("stoody_page_count", Math.max(3, totalCards));
   const [currentPage, setCurrentPage] = useLocalStorage<number>("stoody_current_page", 1);
+
+  // measure available space inside the visible card and compute how many items fit
+  useEffect(() => {
+    if (!rootRef.current) return;
+
+    const measure = () => {
+      // find the rendered card with pos === 0 (visible front card)
+      const cardEl = rootRef.current!.querySelector<HTMLDivElement>('[data-pos="0"]');
+      if (!cardEl) return;
+
+      const cardHeight = cardEl.clientHeight;
+      // find header, input and footer heights (selectors added below)
+      const header = cardEl.querySelector<HTMLElement>('.card-header');
+      const inputWrap = cardEl.querySelector<HTMLElement>('.card-input');
+      const footer = cardEl.querySelector<HTMLElement>('.card-footer');
+
+      const headerH = header?.offsetHeight ?? 48;
+      const inputH = inputWrap?.offsetHeight ?? 0;
+      const footerH = footer?.offsetHeight ?? 28;
+
+      // compute available list height (clientHeight already excludes margins)
+      const available = Math.max(0, cardHeight - headerH - inputH - footerH - 8); // small buffer
+      setAvailableListHeight(available);
+
+      const itemEl = cardEl.querySelector<HTMLLIElement>('li');
+      const itemH = itemEl ? Math.ceil(itemEl.offsetHeight) : FALLBACK_ITEM_HEIGHT;
+      const fit = Math.max(1, Math.floor(available / itemH));
+      setMaxTasksPerCard(fit);
+    };
+
+    // use ResizeObserver on the root so changes in layout re-measure
+    const ro = new ResizeObserver(measure);
+    ro.observe(rootRef.current);
+    // also measure once now
+    measure();
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [width, height, tasks.length]);
 
   useEffect(() => {
     const newTotal = Math.max(Math.ceil(tasks.length / maxTasksPerCard), 3);
@@ -161,6 +208,7 @@ export default function StickyNotesCycle({width = 72, height = 72}: {width?: num
         return (
           <div
             key={i}
+            data-pos={pos}
             className={`absolute rounded-xl shadow-xl transition-all duration-500 ease-in-out p-4 overflow-hidden`}
             style={{
               backgroundColor: color,
@@ -174,7 +222,7 @@ export default function StickyNotesCycle({width = 72, height = 72}: {width?: num
             }}
           >
             <div className="flex items-center justify-between mb-2 pr-2 w-full">
-              <h2 className="text-2xl gochi-hand-regular font-bold underline">To-do List</h2>
+              <h2 className="text-2xl gochi-hand-regular font-bold underline card-header">To-do List</h2>
               {pos === 0 && (
                 <div className="flex items-center gap-2">
                   <button
@@ -208,7 +256,7 @@ export default function StickyNotesCycle({width = 72, height = 72}: {width?: num
 
             <div className="relative flex flex-col h-full pb-8">
               {pos === 0 && (
-                <div className="flex gap-2 mb-2 pr-2">
+                <div className="flex gap-2 mb-2 pr-2 card-input">
                   <input
                     ref={inputRef}
                     type="text"
@@ -227,44 +275,46 @@ export default function StickyNotesCycle({width = 72, height = 72}: {width?: num
                 </div>
               )}
 
-              <ul className="flex-1 overflow-auto space-y-2 pr-2">
+              <ul
+                className="flex-1 overflow-hidden space-y-2 pr-2"
+                style={{ height: availableListHeight ? `${availableListHeight}px` : 'auto' }}
+              >
                 {cardTasks.map((t) => (
                   <li
                     key={t.id}
-                    className="flex items-center justify-between bg-white/30 rounded-md p-2 shadow-[0_2px_0_rgba(0,0,0,0.08)] cursor-pointer"
+                    className="flex items-center bg-white/30 rounded-md p-2 shadow-[0_2px_0_rgba(0,0,0,0.08)] cursor-pointer gap-2"
                     onClick={() => setExpandedTask(t)}
                   >
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={t.done}
-                        onChange={() => toggleTask(t.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4"
-                        disabled={pos !== 0}
-                        aria-label={`Toggle task ${t.text}`}
-                      />
-                      <span
-                        className={`text-sm ${
-                          t.done ? "line-through text-gray-500" : "text-black font-medium"
-                        } max-w-[10rem] truncate inline-block`}
-                      >
-                        {t.text}
-                      </span>
-                    </div>
+                    <input
+                      type="checkbox"
+                      checked={t.done}
+                      onChange={() => toggleTask(t.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-4 h-4 flex-shrink-0"
+                      disabled={pos !== 0}
+                      aria-label={`Toggle task ${t.text}`}
+                    />
+                    <span
+                      className={`text-sm ${
+                        t.done ? "line-through text-gray-500" : "text-black font-medium"
+                      } truncate min-w-0 flex-1`}
+                    >
+                      {t.text}
+                    </span>
                     {pos === 0 && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           removeTask(t.id);
                         }}
-                        className="text-sm text-red-600 hover:opacity-80 p-1 rounded"
+                        className="flex-shrink-0 text-sm text-red-600 hover:opacity-80 p-1 rounded"
                         aria-label={`Delete task ${t.text}`}
                       >
                         <TrashIcon className="text-red-600" width={16} height={16} />
                       </button>
                     )}
                   </li>
+
                 ))}
               </ul>
 
@@ -290,6 +340,7 @@ export default function StickyNotesCycle({width = 72, height = 72}: {width?: num
                       );
                     })}
                   </div>
+                  <div className="card-footer" />
                 </>
               )}
             </div>

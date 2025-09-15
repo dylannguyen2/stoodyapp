@@ -7,6 +7,7 @@ interface StoodyInputProps {
   maxMinutes?: number;
   isExiting?: boolean;
   onExited?: () => void;
+  size: number;
 }
 
 export default function ShortBreakInput({
@@ -15,6 +16,7 @@ export default function ShortBreakInput({
   maxMinutes = 60,
   isExiting = false,
   onExited,
+  size,
 }: StoodyInputProps) {
   return (
     <div className="flex flex-col items-center gap-4">
@@ -25,6 +27,7 @@ export default function ShortBreakInput({
           maxMinutes={maxMinutes}
           isExiting={isExiting}
           onExited={onExited}
+          size={size}
         />
       </div>
 

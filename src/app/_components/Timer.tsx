@@ -8,6 +8,7 @@ import AudioIcon from './icons/AudioIcon';
 import CircularButton from './inputs/CircularButton';
 import BackIcon from './icons/BackIcon';
 import NextIcon from './icons/NextIcon';
+import useWindowSize from './hooks/useWindowSize';
 // import EditUI from './inputs/EditUI';
 
 
@@ -54,6 +55,7 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
 
   const timeline = ['stoody', 'shortBreak', 'stoody', 'shortBreak', 'stoody', 'longBreak'];
   const timePerCycle = 3 * localStoody + 2 * localShortBreak + localLongBreak;
+  const { width, height } = useWindowSize();
 
   function timeRemaining() {
     let time = 0;
@@ -68,10 +70,10 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
     let currentPhase;
     while (temp < timeline.length) {
       currentPhase = timeline[temp];
-  if (currentPhase === 'stoody') time += localStoody;
-  else if (currentPhase === 'shortBreak') time += localShortBreak;
-  else if (currentPhase === 'longBreak') time += localLongBreak;
-      temp++;
+      if (currentPhase === 'stoody') time += localStoody;
+      else if (currentPhase === 'shortBreak') time += localShortBreak;
+      else if (currentPhase === 'longBreak') time += localLongBreak;
+          temp++;
     }
     let numberFullCyclesLeft = cycles - cycleCount;
     time += numberFullCyclesLeft * timePerCycle;
@@ -86,7 +88,7 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
   function nextPhase() {
     const nextStep = (step + 1) % timeline.length;
     if (timeline[step] === 'longBreak' && cycleCount + 1 > cycles) {
-      return "finish";
+      return "Session Complete!";
     }
     const nextPhase = timeline[nextStep];
     return nextPhase === 'stoody' ? `${localStoody}-min stoody`
@@ -122,7 +124,6 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
   }
 
   const phaseLabel = phase === 'stoody' ? 'Work' : phase === 'shortBreak' ? 'Short Break' : phase === 'longBreak' ? 'Long Break' : 'Transition';
-  const nextPhaseLabel = useMemo(() => nextPhase(), [step, cycleCount, localStoody, localShortBreak, localLongBreak, localCycles]);
   const percentComplete = useMemo(() => percentageComplete(), [timer, phase, cycleCount, localStoody, localShortBreak, localLongBreak, localCycles]);
 
   useEffect(() => {
@@ -171,8 +172,6 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
       } catch (e) {
       }
     }
-    
-
     handleSkip();
   }, [timer, phase, isRunning, localCycles, localStoody, localShortBreak, localLongBreak, cycleCount]);
 
@@ -236,7 +235,6 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
       }
     };
 
-  // go to previous phase in the timeline
   const handlePrevStep = () => {
     if (step === 0 && cycleCount === 1) return;
     const prev = step === -1 ? timeline.length - 1 : (step - 1 + timeline.length) % timeline.length;
@@ -271,10 +269,6 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
   const totalSeconds =
     phase === 'stoody' ? localStoody * 60 : phase === 'shortBreak' ? localShortBreak * 60 : phase === 'longBreak' ? localLongBreak * 60 : 5;
 
-  const BASE_SIZE = 420;
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [size, setSize] = useState<number>(BASE_SIZE);
-
    useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -298,52 +292,93 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
       }
     };
 
-    window.addEventListener('keydown', onKeyDown);
+     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [handlePausePlay, handlePrevStep, handleNextStep]);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const el = containerRef.current;
-    const ro = new ResizeObserver((entries) => {
-      if (entries[0] && entries[0].contentRect) {
-        const w = Math.round(entries[0].contentRect.width);
-        const clamped = Math.max(200, Math.min(w, 900));
-        setSize(clamped);
-      }
-    });
-    ro.observe(el);
-    setSize(Math.round((el.getBoundingClientRect().width || BASE_SIZE)));
-    return () => ro.disconnect();
-  }, []);
 
   //////////////////////////////////////////////////////////////////////////
   // UI SIZING
   //////////////////////////////////////////////////////////////////////////
 
-  const uiScale = Math.max(0.3, Math.min(2, 0.7 * size / BASE_SIZE)); // used by Phase/controls/arrows
+  const GLOBAL_SCALE = 0.85;
 
-  // circle size ratio inside the measured container (change this to make circle smaller/larger)
-  const CIRCLE_RATIO = 0.60;
-  const MIN_SVG_SIZE = 240;
-  const svgSize = Math.max(MIN_SVG_SIZE, Math.round(size * CIRCLE_RATIO));
+  const BASE_SIZE = 600;
 
-  // circle-specific scale (used for stroke/radius/inner icons)
-  const circleScale = Math.max(0.3, Math.min(2, 1.2 * svgSize / BASE_SIZE));
-  const center = svgSize / 2;
-  const strokeWidth = Math.max(4, Math.round(27 * circleScale));
-  const radius = Math.max(10, Math.floor(center - strokeWidth / 2 - Math.round(8 * circleScale)));
-  const iconSize = Math.max(12, Math.round(28 * circleScale)); // sizes for audio/edit icons inside circle
+const shortestSide = Math.min(width, height);
+const longestSide = Math.max(width, height);
 
-  const PHASE_BASE = 140;
-  const phaseButtonSize = Math.max(120, Math.round(PHASE_BASE * uiScale));
+// scaleFactor grows with viewport, clamped for usability
+const scaleFactor = Math.max(0.5, Math.min(2, shortestSide / BASE_SIZE));
 
-  const CONTROL_BASE = 56;
-  const controlSize = Math.max(CONTROL_BASE, Math.round(CONTROL_BASE * 0.8 * uiScale));
+const MIN_SVG_SIZE = 220;
+const svgSize = Math.max(MIN_SVG_SIZE, Math.round(shortestSide * 0.5 * GLOBAL_SCALE));
+const center = svgSize / 2;
+const strokeWidth = Math.max(4, 0.15 * center);
+const radius = center - strokeWidth / 2;
+const timerFont = Math.max(18, Math.round(28 * scaleFactor))
 
-  const ARROW_BASE = 48;
-  const arrowSize = Math.max(ARROW_BASE, Math.round(ARROW_BASE * 0.8 * uiScale));
-  const gapSize = Math.max(48, Math.round(48 * uiScale));
+const headerFontSize = Math.max(16, Math.round(svgSize * 0.06));
+
+const phaseButtonSpacing = 0.0625 * svgSize;
+const phaseButtonSize = Math.max(1.25 * 0.33 * (svgSize - 2 * phaseButtonSpacing), 84);
+
+const iconSize = Math.max(20, 0.075 * svgSize);
+const arrowSpacing = 0.1 * svgSize;
+const arrowSize = Math.max(48, 0.12 * svgSize);
+const arrowIconSize = Math.round(arrowSize * 0.6);
+
+const nextPhasePadding = Math.max(8, 0.045 * svgSize);
+
+const controlSize = Math.max(48, 0.16 * svgSize);
+const controlFont = 1/4 * controlSize;
+
+const gapSize = Math.max(32, 0.1 * svgSize);
+
+//////
+
+const containerRef = useRef<HTMLDivElement | null>(null);
+const [showArrows, setShowArrows] = useState(true);
+
+const horizontalPadding = Math.max(12, Math.round(0.12 * svgSize));
+
+const rafRef = useRef<number | null>(null);
+const lastShowRef = useRef<boolean | null>(null);
+
+useEffect(() => {
+  const el = containerRef.current;
+  if (!el) return;
+
+  const measure = () => {
+    if (!containerRef.current) return;
+    const containerWidth = containerRef.current.offsetWidth;
+    const totalNeeded = 2 * (arrowSize + 2 * arrowSpacing) + svgSize;
+    const shouldShow = totalNeeded <= containerWidth;
+    if (lastShowRef.current !== shouldShow) {
+      lastShowRef.current = shouldShow;
+      setShowArrows(shouldShow);
+    }
+  };
+
+  const ro = new ResizeObserver(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(measure);
+  });
+  ro.observe(el);
+
+  const onWin = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(measure);
+  };
+  window.addEventListener('resize', onWin, { passive: true });
+
+  measure();
+
+  return () => {
+    ro.disconnect();
+    window.removeEventListener('resize', onWin);
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+  };
+}, [svgSize, arrowSize, arrowSpacing, horizontalPadding]);
 
   const valueRatio = useMemo(() => clamp(timer / Math.max(1, totalSeconds), 0, 1), [timer, totalSeconds]);
   const startAngle = 0;
@@ -355,26 +390,46 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
   const isFinished = cycleCount === cycles && phase === 'longBreak';
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <h1 className="text-2xl text-black inter-bold">Cycle: {cycleCount} of {cycles}: {percentComplete}% complete</h1>
-      <div className="flex gap-4">
+    <div
+    ref={containerRef}
+    className="flex flex-col items-center w-full">
+      <h1
+        className="text-2xl text-black inter-bold"
+        style={{ fontSize: headerFontSize, paddingBottom: arrowSpacing}}
+        >
+        Cycle: {cycleCount} of {cycles}: {percentComplete}% complete
+      </h1>
+      <div className="flex"
+        style={{ gap: phaseButtonSpacing, alignItems: 'center', justifyContent: 'center', width: '100%' }}>
         <PhaseButton onClick={setNextPhase} currentPhase={phase} phase="stoody" size={phaseButtonSize} />
         <PhaseButton onClick={setNextPhase} currentPhase={phase} phase="shortBreak" size={phaseButtonSize} />
         <PhaseButton onClick={setNextPhase} currentPhase={phase} phase="longBreak" size={phaseButtonSize} />
       </div>
       
       <div
-        ref={containerRef}
-        className="relative flex items-center justify-center gap-4 my-1 px-4"
-        style={{ width: 'clamp(260px, 55vw, 880px)'}}
+        className="relative flex items-center justify-center"
+        style={{
+          // width: 'clamp(260px, 100vw, 1200px)',
+          paddingTop: arrowSpacing,
+          paddingLeft: horizontalPadding,
+          paddingRight: horizontalPadding,
+          gap: arrowSpacing,
+          boxSizing: 'border-box',
+        }}
       >
         <div
           className="flex-shrink-0"
-          style={{ width: `${arrowSize}px`, height: `${arrowSize}px`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{
+            width: arrowSize,
+            height: arrowSize,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
-          {(!isAtStart && size > 280) && (
+          {(!isAtStart) && showArrows && (
             <CircularButton
-              icon={<BackIcon />}
+              icon={<BackIcon width={arrowIconSize} height={arrowIconSize} />}
               onClick={handlePrevStep}
               gradient={
                 phase === "stoody" ? "from-[#C18FFF] to-[#8B5CF6]"
@@ -395,13 +450,13 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
         </div>
         
         {/* svg wrapper: don't let flex shrink it */}
-        <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="relative flex items-center justify-center" style={{ flex: "1 1 auto" }}>
           <svg
             width={svgSize}
             height={svgSize}
             viewBox={`0 0 ${svgSize} ${svgSize}`}
             preserveAspectRatio="xMidYMid meet"
-            className="block"
+            className=""
             style={{
               minWidth: `${MIN_SVG_SIZE}px`,
               minHeight: `${MIN_SVG_SIZE}px`,
@@ -411,7 +466,6 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
           >
           {/* Track */}
           <circle cx={center} cy={center} r={radius} stroke="#E6E6E6" strokeWidth={strokeWidth} fill="none" />
-          {/** gradients are static; memoize so they're not recreated each render */}
           {useMemo(() => (
             <defs>
               <linearGradient id="stoodyGradient" gradientTransform="rotate(90)">
@@ -471,55 +525,65 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
             style={{ transition: 'stroke-dashoffset 360ms cubic-bezier(0.22,1,0.36,1)', willChange: 'stroke-dashoffset' }}
           />
           </svg>
-        </div>
 
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-           <div className="flex items-center gap-2 pointer-events-auto">
-             {size > 350 && (<button
-               aria-label="Mute timer audio"
-               title="Mute timer audio"
-               onClick={() => audioToggle()}
-               className="p-1 rounded-md hover:bg-black/5 cursor-pointer"
-               style={{ width: iconSize + 6, height: iconSize + 6 }}
-             >
-               <AudioIcon
-                 silent={!audioOn}
-                 phase={phase}
-                 width={iconSize}
-                 height={iconSize}
-               />
-             </button>
-             )}
+          {/* overlay moved inside svg wrapper so it's centered on the circle */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="flex items-center gap-2 pointer-events-auto">
+              {width > 350 && (<button
+                aria-label="Mute timer audio"
+                title="Mute timer audio"
+                onClick={() => audioToggle()}
+                className="p-1 rounded-md hover:bg-black/5 cursor-pointer"
+                style={{ width: iconSize + 6, height: iconSize + 6 }}
+              >
+                <AudioIcon
+                  silent={!audioOn}
+                  phase={phase}
+                  width={iconSize}
+                  height={iconSize}
+                />
+              </button>
+              )}
  
-             <span style={{ fontSize: Math.max(18, Math.round(28 * uiScale)) }} className="font-extrabold inter-bold">{`${String(Math.floor(timer / 60)).padStart(2, '0')}:${String(timer % 60).padStart(2, '0')}`}</span>
+              <span style={{ fontSize: timerFont }} className="font-extrabold inter-bold">
+               {`${String(Math.floor(timer / 60)).padStart(2, '0')}:${String(timer % 60).padStart(2, '0')}`}
+               </span>
  
-             {size > 350 && (<button
-               aria-label="Edit session settings"
-               title="Edit session settings"
-               onClick={() => setEditOpen(true)}
-               className="p-1 rounded-md hover:bg-black/5 cursor-pointer"
-               style={{ width: iconSize + 6, height: iconSize + 6 }}
-             >
-               <StoodyIcon
-                 width={iconSize}
-                 height={iconSize}
-                 phase={phase}
-               />
-             </button>
-             )}
-           </div>
-         </div>
-         
+              {width > 350 && (<button
+                aria-label="Edit session settings"
+                title="Edit session settings"
+                onClick={() => setEditOpen(true)}
+                className="p-1 rounded-md hover:bg-black/5 cursor-pointer"
+                style={{ width: iconSize + 6, height: iconSize + 6 }}
+              >
+                <StoodyIcon
+                  width={iconSize}
+                  height={iconSize}
+                  phase={phase}
+                />
+              </button>
+              )}
+            </div>
+          </div>
+        </div>
  
          {/* next button: positioned to the right */}
-         
            <div
-             className="flex-shrink-0"
-             style={{ width: `${arrowSize}px`, height: `${arrowSize}px`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-           >
-             {(!isFinished && size > 280) && (
+              className="flex-shrink-0"
+              style={{
+                width: arrowSize,
+                height: arrowSize,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+             {(!isFinished) && showArrows && (
              <CircularButton
-               icon={<NextIcon />}
+               icon={<NextIcon
+                height={arrowIconSize}
+                width={arrowIconSize}
+                />}
                onClick={handleNextStep}
                gradient={
                 phase === "stoody" ? "from-[#C18FFF] to-[#8B5CF6]"
@@ -541,12 +605,51 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
         
       </div>
 
-      <div className="flex mt-1" style={{ gap: `${gapSize}px` }}>
-        <Reset onClick={handleReset} size={controlSize} />
-        <Playback onClick={handlePausePlay} sessionState={phase} isRunning={isRunning} size={controlSize} />
-        <Skip onClick={handleSkip} size={controlSize} />
+      <div
+      className="text-[#6B7280]"
+      style={{ 
+        paddingTop: nextPhasePadding,
+        paddingBottom: nextPhasePadding,
+        fontSize: controlFont,
+       }}>
+        Next: {nextPhase()}
       </div>
-      
+
+      <div className="flex mt-1" style={{ gap: `${gapSize}px` }}>
+        <div className="flex flex-col items-center">
+          <Reset onClick={handleReset} size={controlSize} />
+          <div 
+            className={`mt-2 bg-gradient-to-r from-[#F87171] to-[#DC2626] bg-clip-text text-transparent`}
+            style={{ fontSize: controlFont }}
+          >
+            Reset
+          </div>
+        </div>
+        <div className="flex flex-col items-center">
+          <Playback onClick={handlePausePlay} sessionState={phase} isRunning={isRunning} size={controlSize} />
+          <div
+            className={`mt-2 bg-gradient-to-r bg-clip-text text-transparent
+              ${phase === "stoody" ? "from-[#C18FFF] to-[#8B5CF6]" 
+              : phase === "shortBreak" ? "from-[#2BB5A3] to-[#1E8771]" 
+              : phase === "longBreak" ? "from-[#4CAF50] to-[#3D9440]" 
+              : "from-[#9CA3AF] to-[#6B7280]"}
+            `}
+            style={{ fontSize: controlFont }}
+          >
+            {isRunning ? 'Pause' : 'Play'}
+          </div>
+
+        </div>
+        <div className="flex flex-col items-center">
+          <Skip onClick={handleSkip} size={controlSize} />
+          <div
+            className={`mt-2 text-lg bg-gradient-to-r from-[#3B82F6] to-[#60A5FA] bg-clip-text text-transparent`}
+            style={{ fontSize: controlFont }}
+          >
+            Skip
+          </div>
+        </div>
+      </div>
      </div>
    );
  }

@@ -9,18 +9,20 @@ interface StoodyInputProps {
   maxMinutes?: number;
   isExiting?: boolean;
   onExited?: () => void;
+  size: number;
 }
 
 export default function CycleInput({
   value,
   onChange,
+  size,
   isExiting = false,
   onExited,
 }: StoodyInputProps) {
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="flex justify-center items-center">
-        <CalculatorCycles cycles={value} setCycles={onChange} isExiting={isExiting} onExited={onExited} />
+        <CalculatorCycles cycles={value} setCycles={onChange} isExiting={isExiting} onExited={onExited} size={size} />
       </div>
     </div>
   )

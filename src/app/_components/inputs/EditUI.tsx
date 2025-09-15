@@ -27,6 +27,7 @@ export default function EditUI({ initial = {}, onSave, onCancel }: Props) {
   const [cycles, setCycles] = useState<number>(start.cycles);
   const [error, setError] = useState<string | null>(null);
 
+
   const validate = (): Values | null => {
     if (stoody < 1 || shortBreak < 1 || longBreak < 1 || cycles < 1) {
       setError('All values must be at least 1');
@@ -126,30 +127,25 @@ export default function EditUI({ initial = {}, onSave, onCancel }: Props) {
 
       {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
-      <div className="mt-6 flex justify-center items-center">
-        <div className="flex gap-3">
+      <div className="mt-6 flex justify-center items-center w-full">
+        <div className="flex gap-3 w-full justify-center">
           <Button
             onClick={onCancel ?? (() => {})}
             text="Cancel"
-            height={32}
-            width={32}
             gradient="from-gray-300 to-gray-200"
             shadow="bdbdbd"
             textColour="gray-800"
-          />
-
+            className="flex-1 min-w-[120px]"
+            /> 
           <Button
             onClick={handleSave}
             text="Save"
-            height={32}
-            width={32}
             gradient="from-[#C18FFF] to-[#a770ff]"
             shadow="8054c7"
             textColour="white"
+            className="flex-1 min-w-[120px] text-[clamp(12px,4vw,20px)]"
           />
         </div>
-
-        <div className="w-0" />
       </div>
     </motion.div>
   );

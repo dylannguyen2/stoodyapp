@@ -9,9 +9,10 @@ interface StickyNotesProps {
   handleStartSession: () => void;
   isExiting?: boolean;
   onExited?: () => void;
+  size: number;
 }
 
-export default function StickyNotes({ name, setName, nextSessionState, handleStartSession, isExiting: parentExiting = false, onExited, }: StickyNotesProps) {
+export default function StickyNotes({ name, setName, nextSessionState, handleStartSession, isExiting: parentExiting = false, onExited, size }: StickyNotesProps) {
   const [isExiting, setIsExiting] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -59,60 +60,142 @@ export default function StickyNotes({ name, setName, nextSessionState, handleSta
     }
   };
 
-  return (
-    <div className="relative w-84 h-84 group cursor-pointer mx-auto">
-      {[3, 2, 1].map((num) => {
-        const exitTransforms: Record<number, string> = {
-          // fade to a slightly visible state instead of fully transparent
-          1: 'translate-x-40 -translate-y-20 rotate-12 opacity-25',
-          2: '-translate-x-40 -translate-y-20 -rotate-12 opacity-25',
-          3: 'translate-y-32 rotate-0 opacity-25',
-        };
+  // size-driven geometry
+  const s = Math.max(120, Math.round(size));
+  const noteWidth = s;
+  const noteHeight = s;
+  const offsetSmall = Math.round(s * 0.06);
+  const offsetMedium = Math.round(s * 0.12);
+  const shadowBlur = Math.round(s * 0.04);
+  const titleFont = Math.max(14, Math.round(s * 0.095));
+  const inputWidth = Math.max(80, Math.round(s * 0.62));
+  const inputPaddingY = Math.max(8, Math.round(s * 0.04));
+  const inputPaddingX = Math.max(10, Math.round(s * 0.05));
+  const inputFont = Math.max(14, Math.round(s * 0.07));
+  const noteRadius = Math.max(10, Math.round(s * 0.04));
 
-  const baseClasses = `absolute w-full h-full rounded-xl shadow-xl transition-transform transition-opacity duration-200 ease-in-out ${
-          num === 1
-            ? 'bg-[#C18FFF] z-30 hover:scale-105'
-            : num === 2
-            ? 'bg-[#5EB1FF] top-2 left-2 z-20 -rotate-3 pointer-events-none group-hover:rotate-3'
-            : 'bg-[#FFC645] z-10 top-4 left-4 -rotate-7 pointer-events-none group-hover:rotate-3'
-        }`;
-
-        const exitClass = isExiting ? exitTransforms[num] : '';
+  // layering/transforms for three notes
+  const notesConfig: {
+    num: number;
+    bg: string;
+    style: React.CSSProperties;
+    pointerEvents?: string;
+  }[] = [
+    {
+      num: 3,
+      bg: '#FFC645',
+      style: {
+        top: offsetMedium,
+        left: offsetMedium,
+        zIndex: 10,
+        transform: `rotate(-7deg)`,
+      },
+      pointerEvents: 'none',
+    },
+    {
+      num: 2,
+      bg: '#5EB1FF',
+      style: {
+        top: offsetSmall,
+        left: offsetSmall,
+        zIndex: 20,
+        transform: `rotate(-3deg)`,
+      },
+      pointerEvents: 'none',
+    },
+    {
+      num: 1,
+      bg: '#C18FFF',
+      style: {
+        top: 0,
+        left: 0,
+        zIndex: 30,
+        transform: `rotate(0deg)`,
+      },
+    },
+  ];
 
   const mountClass = mounted ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2 pointer-events-none';
-        const style: React.CSSProperties = isExiting
-          ? { transitionDelay: `${(3 - num) * 80}ms` }
-          : {};
+  const exitTransforms: Record<number, string> = {
+    1: `translateX(${Math.round(s * 0.12)}px) translateY(-${Math.round(s * 0.06)}px) rotate(12deg) opacity-25`,
+    2: `translateX(-${Math.round(s * 0.12)}px) translateY(-${Math.round(s * 0.06)}px) rotate(-12deg) opacity-25`,
+    3: `translateY(${Math.round(s * 0.18)}px) rotate(0deg) opacity-25`,
+  };
+
+  return (
+    <div
+      style={{ width: noteWidth, height: noteHeight, position: 'relative', margin: '0 auto', cursor: 'pointer' }}
+      className="group"
+    >
+      {notesConfig.map(({ num, bg, style, pointerEvents }) => {
+        const baseStyle: React.CSSProperties = {
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          borderRadius: noteRadius,
+          boxShadow: `0 ${Math.round(shadowBlur / 2)}px ${shadowBlur}px rgba(0,0,0,0.18)`,
+          transition: 'transform 200ms ease-in-out, opacity 200ms ease-in-out',
+          background: bg,
+          ...style,
+          pointerEvents: pointerEvents as any,
+        };
+
+        const exitClass = isExiting ? exitTransforms[num] : '';
+        const styleWithExit = isExiting ? { ...baseStyle } : baseStyle;
+        if (isExiting) {
+          // apply transform string as inline transform if exiting
+          styleWithExit.transform = exitClass || baseStyle.transform;
+        }
 
         return (
-            <div
-              key={num}
-              className={`${baseClasses} ${mountClass} ${exitClass}`}
-              style={style}
-            >
-        {num === 1 && (
-          <div className="flex flex-col items-center mt-6 h-full text-black font-bold transition-all duration-200">
-                <h1 className="text-3xl gochi-hand-regular">Who's Studying?</h1>
+          <div key={num} style={styleWithExit} className={mountClass}>
+            {num === 1 && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  marginTop: Math.round(s * 0.08),
+                  height: '100%',
+                  color: 'black',
+                  fontWeight: 700,
+                }}
+              >
+                <h1
+                  style={{
+                    fontSize: titleFont,
+                    margin: 0,
+                    fontFamily: 'Gochi Hand, sans-serif',
+                  }}
+                >
+                  Who's Studying?
+                </h1>
 
-                {/* Sticky note styled input */}
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={name}
-                  className="
-                    mt-4 w-56 px-4 py-3
-                    rounded-sm
-                    bg-[#C18FFF] text-black placeholder-black/40
-                    font-semibold gochi-hand-regular
-                    shadow-[2px_4px_8px_rgba(0,0,0,0.2)]
-                    border border-[#A46CDB]
-                    focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/60
-                    transform -rotate-1
-                  "
+                  style={{
+                    marginTop: Math.round(s * 0.04),
+                    width: inputWidth,
+                    paddingTop: inputPaddingY,
+                    paddingBottom: inputPaddingY,
+                    paddingLeft: inputPaddingX,
+                    paddingRight: inputPaddingX,
+                    borderRadius: Math.max(6, Math.round(s * 0.02)),
+                    background: '#C18FFF',
+                    color: 'black',
+                    fontWeight: 700,
+                    fontFamily: 'Gochi Hand, monospace',
+                    fontSize: inputFont,
+                    boxShadow: `2px 4px ${Math.round(shadowBlur / 2)}px rgba(0,0,0,0.2)`,
+                    border: `1px solid rgba(164,108,219,0.9)`,
+                    transform: 'rotate(-1deg)',
+                    outline: 'none',
+                  }}
                 />
-
               </div>
             )}
           </div>

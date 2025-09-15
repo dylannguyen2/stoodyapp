@@ -7,6 +7,7 @@ interface StoodyInputProps {
   maxMinutes?: number;
   isExiting?: boolean;
   onExited?: () => void;
+  size: number;
 }
 
 export default function StoodyInput({
@@ -15,6 +16,7 @@ export default function StoodyInput({
   maxMinutes = 120,
   isExiting = false,
   onExited,
+  size
 }: StoodyInputProps) {
   return (
     <div className="flex flex-col items-center gap-4">
@@ -24,6 +26,7 @@ export default function StoodyInput({
         maxMinutes={maxMinutes}
         isExiting={isExiting}
         onExited={onExited}
+        size={size}
       />
 
     </div>

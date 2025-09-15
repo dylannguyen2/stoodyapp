@@ -7,12 +7,25 @@ interface CalculatorCyclesProps {
   setCycles: (n: number) => void;
   isExiting?: boolean;
   onExited?: () => void;
+  size: number;
 }
 
-export default function CalculatorCycles({ cycles, setCycles, isExiting = false, onExited }: CalculatorCyclesProps) {
+export default function CalculatorCycles({ cycles, setCycles, isExiting = false, onExited, size }: CalculatorCyclesProps) {
   const [expression, setExpression] = useState<string | null>(null);
   const [justEvaluated, setJustEvaluated] = useState(false);
   const [pressedButton, setPressedButton] = useState<string | null>(null);
+  // size-driven layout (all measurements are relative to `size`)
+  const width = Math.max(160, Math.round(size));
+  const padding = Math.round(width * 0.04);
+  const gap = Math.max(6, Math.round(width * 0.02));
+  const inputHeight = Math.max(48, Math.round(width * 0.12));
+  const inputFontSize = Math.max(16, Math.round(width * 0.06));
+  const btnWidth = Math.max(40, Math.round((width - padding * 2 - gap * 3) / 4));
+  const btnHeight = Math.max(32, Math.round(btnWidth * 0.5));
+  const btnRadius = Math.max(8, Math.round(btnHeight * 0.28));
+  const topGradientHeight = Math.max(10, Math.round(btnHeight * 0.45));
+  const eqButtonHeight = btnHeight;
+  const eqFontSize = Math.max(16, Math.round(width * 0.06));
 
   const handlePress = (val: string) => {
     setPressedButton(val);
@@ -113,15 +126,15 @@ export default function CalculatorCycles({ cycles, setCycles, isExiting = false,
   }, [mounted, isExiting]);
 
   return (
-   <div
-      className={`w-3/4 bg-[#E0D4FF] rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.15)] p-4 flex flex-col items-center pb-4 transform transition-transform transition-opacity duration-200 ease-out ${
+    <div
+      className={`bg-[#E0D4FF] rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.15)] transform transition-transform transition-opacity duration-200 ease-out ${
         isExiting
           ? 'opacity-0 scale-95 translate-y-2'
           : mounted
           ? 'opacity-100 scale-100 translate-y-0'
           : 'opacity-0 scale-95 translate-y-2'
       }`}
-      style={{ willChange: 'transform, opacity' }}
+      style={{ willChange: 'transform, opacity', width: width, padding: padding, paddingBottom: padding * 0.8 }}
     >
 
       {isExiting && onExited ? <ExitCaller onExited={onExited} /> : null}
@@ -137,50 +150,72 @@ export default function CalculatorCycles({ cycles, setCycles, isExiting = false,
           setExpression(e.target.value === "" ? null : e.target.value);
         }}
         placeholder={cycles.toString()}
-        className="
-          w-full h-1/4 bg-[#F3E8FF] text-[#8B5CF6] font-mono text-2xl flex items-center justify-end px-4 rounded-xl
-          border-2 border-[#D8B4FE] shadow-[inset_0_3px_6px_rgba(139,92,246,0.25)]
-        "
+        className="w-full bg-[#F3E8FF] text-[#8B5CF6] font-mono flex items-center justify-end rounded-xl border-2 border-[#D8B4FE]"
+        style={{
+          height: inputHeight,
+          fontSize: inputFontSize,
+          paddingLeft: Math.round(padding * 0.8),
+          paddingRight: Math.round(padding * 0.8),
+          boxShadow: 'inset 0 3px 6px rgba(139,92,246,0.25)'
+        }}
       />
 
-      <div className="flex flex-col gap-2 w-full mt-3">
+      <div className="flex flex-col gap-2 w-full mt-3" style={{ gap }}>
         {buttons.map((row, i) => (
-          <div key={i} className="grid grid-cols-4 gap-2">
+          <div key={i} className="grid grid-cols-4" style={{ gap }}>
             {row.map((b, j) =>
               b ? (
-                <div key={j} style={{ width: '48px', height: '32px', position: 'relative' }}>
+                <div key={j} style={{ width: btnWidth, height: btnHeight, position: 'relative' }}>
                   {b !== "C" && b !== "⌫" && (
                     <div
-                      className="absolute left-0 w-full h-8 rounded-xl shadow-[0_6px_12px_rgba(196,156,207,0.4)] bg-[#C49CCF] top-[6px]"
                       aria-hidden
+                      style={{
+                        position: 'absolute',
+                        left: 0,
+                        top: Math.round(btnHeight * 0.19),
+                        width: '100%',
+                        height: topGradientHeight,
+                        borderRadius: btnRadius,
+                        boxShadow: `0 ${Math.round(btnHeight * 0.18)}px ${Math.round(btnHeight * 0.36)}px rgba(196,156,207,0.4)`,
+                        background: '#C49CCF',
+                        zIndex: 0,
+                      }}
                     />
                   )}
 
                   <button
                     onClick={() => handlePress(b === "÷" ? "/" : b === "×" ? "*" : b)}
-                    className={`
-                      relative w-full h-8 rounded-xl flex items-center justify-center overflow-hidden
-                      transition-all duration-150 cursor-pointer
-                      ${
-                        b === "C" || b === "⌫"
-                          ? pressedButton === b
-                            ? 'translate-y-[4px] shadow-[0_0px_0px_#AF1010] bg-gradient-to-b from-[#FF5A5A] to-[#DC2626]'
-                            : 'bg-gradient-to-b from-[#FF5A5A] to-[#DC2626] shadow-[0_4px_0px_#AF1010] hover:translate-y-[2px] hover:shadow-[0_2px_0px_#AF1010]'
-                          : pressedButton === b
-                            ? 'translate-y-[4px] shadow-[0_0px_0px_rgba(196,156,207,0.4)] bg-[#E1BEE7]'
-                            : 'bg-[#E1BEE7] active:bg-[#E1BEE7] shadow-[0_4px_0px_rgba(196,156,207,0.4)] hover:translate-y-[2px] hover:shadow-[0_2px_0px_rgba(196,156,207,0.4)]'
-                      }
-                    `}
+                    className="relative w-full rounded-xl flex items-center justify-center overflow-hidden transition-all duration-150 cursor-pointer"
+                    style={{
+                      height: btnHeight,
+                      zIndex: 1,
+                      borderRadius: btnRadius,
+                      transform: pressedButton === b ? `translateY(${Math.round(btnHeight * 0.12)}px)` : undefined,
+                      boxShadow: b === "C" || b === "⌫"
+                        ? pressedButton === b
+                          ? '0 0 0 #AF1010'
+                          : `0 ${Math.round(btnHeight * 0.12)}px 0 #AF1010`
+                        : pressedButton === b
+                          ? `0 0 0 rgba(196,156,207,0.4)`
+                          : `0 ${Math.round(btnHeight * 0.12)}px 0 rgba(196,156,207,0.4)`,
+                      background: b === "C" || b === "⌫"
+                        ? (pressedButton === b ? 'linear-gradient(to bottom,#FF5A5A,#DC2626)' : 'linear-gradient(to bottom,#FF5A5A,#DC2626)')
+                        : (pressedButton === b ? '#E1BEE7' : '#E1BEE7')
+                    }}
                   >
                     {/* top gradient highlight */}
                     <div
-                      className="absolute top-0 left-0 w-full h-[15px] rounded-t-xl overflow-hidden pointer-events-none"
+                      className="absolute top-0 left-0 w-full rounded-t-xl overflow-hidden pointer-events-none"
                       style={{
+                        height: topGradientHeight,
                         background: 'linear-gradient(to bottom, rgba(255,255,255,0.15), rgba(255,255,255,0))',
+                        borderTopLeftRadius: btnRadius,
+                        borderTopRightRadius: btnRadius,
+                        zIndex: 2
                       }}
                       aria-hidden
                     />
-                    <span className="relative text-white font-bold">{b}</span>
+                    <span style={{ fontWeight: 700, color: '#fff' }} className="relative">{b}</span>
                   </button>
                 </div>
               ) : (
@@ -191,18 +226,24 @@ export default function CalculatorCycles({ cycles, setCycles, isExiting = false,
           </div>
         ))}
 
-        <div className="grid grid-cols-4 gap-2 mt-2">
-          <button
-            onClick={() => handlePress("=")}
-            className={`
-              col-span-4 h-8 rounded-xl bg-gradient-to-b from-[#8B5CF6] to-[#6931b0]
-              text-white font-bold text-lg
-              transition-all duration-150
-              ${pressedButton === "=" ? 'translate-y-1 shadow-[0_0px_0px_#5d21c2)]' : 'shadow-[0_4px_0px_#5d21c2] hover:translate-y-[2px] hover:shadow-[0_2px_0px_#5d21c2]'}
-            `}
-          >
-            =
-          </button>
+        <div className="grid grid-cols-4 gap-2 mt-2" style={{ gap }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <button
+              onClick={() => handlePress("=")}
+              style={{
+                width: '100%',
+                height: eqButtonHeight,
+                borderRadius: btnRadius,
+                background: 'linear-gradient(to bottom,#8B5CF6,#6931b0)',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: eqFontSize,
+                boxShadow: pressedButton === "=" ? '0 0 0 #5d21c2' : `0 ${Math.round(eqButtonHeight * 0.12)}px 0 #5d21c2`,
+                transform: pressedButton === "=" ? `translateY(${Math.round(eqButtonHeight * 0.08)}px)` : undefined,
+                transition: 'all 150ms'
+              }}
+            >=</button>
+          </div>
         </div>
       </div>
     </div>

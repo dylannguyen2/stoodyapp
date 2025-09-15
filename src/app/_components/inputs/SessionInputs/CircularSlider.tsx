@@ -37,10 +37,12 @@ export default function CircularSlider({
   const lastAngleRef = useRef<number | null>(null);
   const accumulatedAngleRef = useRef<number | null>(null);
 
+  const knobRadius = 0.5 * (0.12 * size);
   const center = size / 2;
-  const radius = center - 18;
-  const strokeWidth = 24;
+  const strokeWidth = 0.075 * size;
+  const radius = center - strokeWidth / 2 - knobRadius;
   const step = 5;
+
 
   const minutes = typeof value === 'number' ? value : internalMinutes;
   const valueRatio = clamp(minutes / maxMinutes, 0, 1);
@@ -210,14 +212,14 @@ export default function CircularSlider({
         <circle
           cx={knobPos.x}
           cy={knobPos.y}
-          r={16}
+          r={knobRadius}
           fill="#8B5CF6"
           stroke="#6B21A8"
           strokeWidth={3}
           onPointerDown={handlePointerDown}
           style={{ cursor: 'grab', touchAction: 'none' }}
         />
-        <circle cx={knobPos.x} cy={knobPos.y} r={4} fill="#fff" pointerEvents="none" />
+        <circle cx={knobPos.x} cy={knobPos.y} r={knobRadius / 4} fill="#fff" pointerEvents="none" />
         <text
           x={center}
           y={center}

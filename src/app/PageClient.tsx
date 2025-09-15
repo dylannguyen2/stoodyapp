@@ -13,10 +13,18 @@ import LeftButton from './_components/inputs/SessionInputs/LeftButton';
 import RightButton from './_components/inputs/SessionInputs/RightButton';
 import EditUI from './_components/inputs/EditUI';
 import { AnimatePresence, motion } from 'framer-motion';
+import useWindowSize from './_components/hooks/useWindowSize';
 
 
 export default function PageClient() {
   const router = useRouter();
+  const { width, height } = useWindowSize();
+
+  // design target size (tweak to your design baseline)
+  const DESIGN_W = 1280;
+  const DESIGN_H = 800;
+  // scale down uniformly to fit both width and height, never scale up
+  const pageScale = Math.min(1, width / DESIGN_W, height / DESIGN_H || 1);
   const sessionCreationStates = ['cached','name', 'stoody', 'shortBreak', 'longBreak', 'cycles'] as const;
   type SessionCreationState = (typeof sessionCreationStates)[number];
 
@@ -206,8 +214,20 @@ export default function PageClient() {
     setSessionCreateState('name');
   };
 
+  // Dynamic Sizing
+  const svgSize = 1/2 * Math.min(width, height);
+  const arrowSize = Math.max(48, 0.12 * svgSize);
+  const arrowIconSize = Math.round(arrowSize * 0.6);
+
+  const timeSize = Math.max(48, 0.2 * svgSize);
+  const timeSpacing = 1/3 * timeSize;
+
+  // card width: 1/3 of viewport width (clamped to sensible min/max)
+  const cardThird = Math.round(Math.max(240, Math.min(680, width / 3)));
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="w-screen h-screen flex flex-col">
+      {timeSize}
       <AnimatePresence>
         {editOpen && (
           <motion.div
@@ -270,98 +290,114 @@ export default function PageClient() {
           </h1>
         </div>
       </div>
-      <div className="flex-1 flex flex-col items-center">
-        {sessionCreateState === 'cached' && (
-          <div className="flex flex-col items-center gap-4 w-full">
-            <LastPresetCard
-              name={name}
-              stoody={stoody}
-              shortBreak={shortBreak}
-              longBreak={longBreak}
-              cycles={cycles}
-              onClick={handleStartSession}
-              onEdit={openEdit}
-            />
-            <FreshStartCard
-              onClick={() => {applyDefaultPreset();}}
-            />
-          </div>
-        )}
-        {sessionCreateState !== 'cached' && (
-          <>
-          <div className="w-full h-[360px] flex items-center justify-center border border-green-200">
-
-            {/* Wider group: buttons spread apart with SessionInput centered */}
-            <div className="flex items-center w-full max-w-3xl justify-between px-8">
-              
-              <LeftButton
-                sessionCreateState={sessionCreateState}
-                hasCachedPreset={hasCachedPreset}
-                handlePrevClick={handlePrevClick}
-                handleStartSession={handleStartSession}
-              />
-
-              <div className="flex-1 mx-6 flex justify-center">
-                <SessionInput
-                  sessionCreateState={sessionCreateState}
+      <div className="flex-1 flex items-center justify-center">
+        {/* scale wrapper: keeps content proportional to viewport */}
+        <div
+        >
+          <div className="flex flex-col items-center w-full max-w-3xl">
+            {sessionCreateState === 'cached' && (
+              <div className="flex flex-col items-center gap-4 w-full">
+                <LastPresetCard
                   name={name}
                   stoody={stoody}
                   shortBreak={shortBreak}
                   longBreak={longBreak}
                   cycles={cycles}
-                  isExiting={isExiting}
-                  setName={setName}
-                  setStoody={setStoody}
-                  setShortBreak={setShortBreak}
-                  setLongBreak={setLongBreak}
-                  setCycles={setCycles}
-                  nextSessionState={nextSessionState}
-                  handleStartSession={handleStartSession}
-                  handleOnExited={handleOnExited}
+                  onClick={handleStartSession}
+                  onEdit={openEdit}
+                  cardWidth={cardThird}
+                />
+                <FreshStartCard
+                  onClick={() => {applyDefaultPreset();}}
+                  cardWidth={cardThird}
                 />
               </div>
-
-              <RightButton
-                sessionCreateState={sessionCreateState}
-                handleNextClick={handleNextClick}
-                handleStartSession={handleStartSession}
-              />
-            </div>
-          </div>
-          <div className="pt-8 flex justify-center min-h-[90px]">
-            {(sessionCreateState !== "name") && (
-                <TimeButtons
-                  sessionCreateState={sessionCreateState}
-                  value={
-                    sessionCreateState === "stoody"
-                      ? stoody
-                      : sessionCreateState === "shortBreak"
-                      ? shortBreak
-                      : sessionCreateState === "longBreak"
-                      ? longBreak
-                      : cycles
-                  }
-                  onChange={(v: number) =>
-                    sessionCreateState === "stoody"
-                      ? setStoody(v)
-                      : sessionCreateState === "shortBreak"
-                      ? setShortBreak(v)
-                      : sessionCreateState === "longBreak"
-                      ? setLongBreak(v)
-                      : setCycles(v)
-                  }
-                  isExiting={isExiting}
-                  onExited={handleOnExited}
-                />
-
             )}
+            {sessionCreateState !== 'cached' && (
+              <>
+              <div className="flex items-center justify-center w-full " style={{height: '50vh'}}>
+
+                {/* Wider group: buttons spread apart with SessionInput centered */}
+                <div className="flex items-center justify-between">
+                  
+                  <LeftButton
+                    sessionCreateState={sessionCreateState}
+                    hasCachedPreset={hasCachedPreset}
+                    handlePrevClick={handlePrevClick}
+                    handleStartSession={handleStartSession}
+                    size={arrowSize}
+                    arrowIconSize={arrowIconSize}
+                  />
+
+                  <div className="flex-1 h-full flex justify-center border border-red-500" style={{width: '50vw'}}>
+                    <SessionInput
+                      sessionCreateState={sessionCreateState}
+                      name={name}
+                      stoody={stoody}
+                      shortBreak={shortBreak}
+                      longBreak={longBreak}
+                      cycles={cycles}
+                      isExiting={isExiting}
+                      setName={setName}
+                      setStoody={setStoody}
+                      setShortBreak={setShortBreak}
+                      setLongBreak={setLongBreak}
+                      setCycles={setCycles}
+                      nextSessionState={nextSessionState}
+                      handleStartSession={handleStartSession}
+                      handleOnExited={handleOnExited}
+                      windowWidth={width}
+                      windowHeight={height}
+                    />
+                  </div>
+
+                  <RightButton
+                    sessionCreateState={sessionCreateState}
+                    handleNextClick={handleNextClick}
+                    handleStartSession={handleStartSession}
+                    size={arrowSize}
+                    arrowIconSize={arrowIconSize}
+                  />
+                </div>
+              </div>
+              <div className="pt-8 flex justify-center min-h-[90px]">
+                {(sessionCreateState !== "name") && (
+                    <TimeButtons
+                      sessionCreateState={sessionCreateState}
+                      value={
+                        sessionCreateState === "stoody"
+                          ? stoody
+                          : sessionCreateState === "shortBreak"
+                          ? shortBreak
+                          : sessionCreateState === "longBreak"
+                          ? longBreak
+                          : cycles
+                      }
+                      onChange={(v: number) =>
+                        sessionCreateState === "stoody"
+                          ? setStoody(v)
+                          : sessionCreateState === "shortBreak"
+                          ? setShortBreak(v)
+                          : sessionCreateState === "longBreak"
+                          ? setLongBreak(v)
+                          : setCycles(v)
+                      }
+                      isExiting={isExiting}
+                      onExited={handleOnExited}
+                      size={timeSize}
+                      spacing={timeSpacing}
+                    />
+
+                )}
+              </div>
+              </>
+            )}
+
+              {/* {sessionCreateState}: {name} {stoody} {shortBreak} {longBreak} {cycles} cached:{hasCachedPreset.toString()} */}
+
           </div>
-          </>
-        )}
-
-          {/* {sessionCreateState}: {name} {stoody} {shortBreak} {longBreak} {cycles} cached:{hasCachedPreset.toString()} */}
-
         </div>
+      </div>
     </div>
   );
 }

@@ -20,6 +20,8 @@ interface SessionInputProps {
   handleStartSession: () => void;
   isExiting?: boolean;
   handleOnExited?: () => void;
+  windowWidth: number;
+  windowHeight: number;
 }
 
 export default function ({
@@ -37,10 +39,13 @@ export default function ({
   nextSessionState,
   handleStartSession,
   isExiting = false,
-  handleOnExited
+  handleOnExited,
+  windowWidth,
+  windowHeight
 }: SessionInputProps) {
+  const shorterSide = Math.min(windowWidth, windowHeight);
   return (
-    <>
+    <div className="">
     {sessionCreateState === "name" && (
         <StickyNotes
           name={name}
@@ -49,6 +54,7 @@ export default function ({
           handleStartSession={handleStartSession}
           isExiting={isExiting}
           onExited={handleOnExited}
+          size={shorterSide * 0.4}
         />
       )}
       {sessionCreateState === "stoody" && (
@@ -58,6 +64,7 @@ export default function ({
           maxMinutes={120}
           isExiting={isExiting}
           onExited={handleOnExited}
+          size={shorterSide / 2}
         />
       )}
       {sessionCreateState === "shortBreak" && (
@@ -67,6 +74,7 @@ export default function ({
           maxMinutes={60}
           isExiting={isExiting}
           onExited={handleOnExited}
+          size={shorterSide / 2}
         />
       )}
       {sessionCreateState === "longBreak" && (
@@ -76,6 +84,7 @@ export default function ({
           maxMinutes={120}
           isExiting={isExiting}
           onExited={handleOnExited}
+          size={shorterSide /1.5}
         />
       )}
       {sessionCreateState === "cycles" && (
@@ -84,8 +93,9 @@ export default function ({
           onChange={setCycles}
           isExiting={isExiting}
           onExited={handleOnExited}
+          size={shorterSide / 2 * 0.9}
         />
       )}
-    </>
+    </div>
   )
 }

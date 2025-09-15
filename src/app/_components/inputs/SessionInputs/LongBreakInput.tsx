@@ -7,6 +7,7 @@ interface StoodyInputProps {
   maxMinutes?: number;
   isExiting?: boolean;
   onExited?: () => void;
+  size: number;
 }
 
 export default function LongBreakInput({
@@ -15,13 +16,14 @@ export default function LongBreakInput({
   maxMinutes = 60,
   isExiting = false,
   onExited,
+  size
 }: StoodyInputProps) {
 
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="w-full flex justify-center">
         <Sundial
-          size={560}
+          size={size}
           value={value}
           onChange={onChange}
           maxMinutes={maxMinutes}

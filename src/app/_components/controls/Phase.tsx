@@ -2,7 +2,7 @@ type PhaseButtonProps = {
   onClick: (phase: 'stoody' | 'shortBreak' | 'longBreak' | 'transition') => void;
   currentPhase: 'stoody' | 'shortBreak' | 'longBreak' | 'transition';
   phase: 'stoody' | 'shortBreak' | 'longBreak' | 'transition';
-  size?: number; // optional width in px to scale the button
+  size?: number;
 };
 
 export default function PhaseButton({ onClick, currentPhase, phase, size }: PhaseButtonProps) {
@@ -21,12 +21,11 @@ export default function PhaseButton({ onClick, currentPhase, phase, size }: Phas
     : 'from-[#D9D9D9] to-[#D9D9D9] shadow-[0_4px_0px_#B0B0B0] hover:shadow-[0_2px_0px_#B0B0B0] hover:translate-y-[2px] active:shadow-[0_0px_0px_#B0B0B0]';
   }
 
-  // scaling defaults
-  const DEFAULT_WIDTH = 160; // w-40 equivalent
+  const DEFAULT_WIDTH = 160;
   const width = size ?? DEFAULT_WIDTH;
-  const paddingY = Math.max(6, Math.round(width * 0.05)); // ~8px for 160
-  const paddingX = Math.max(12, Math.round(width * 0.125)); // ~20px for 160
-  const fontSize = Math.max(16, Math.round(width * 0.125)); // ~20px for 160
+  const paddingY = Math.max(6, Math.round(width * 0.05));
+  const fontSize = Math.max(16, Math.round(width * 0.175));
+  
 
   return (
     <div className="flex items-center gap-3 relative z-30">
@@ -43,7 +42,7 @@ export default function PhaseButton({ onClick, currentPhase, phase, size }: Phas
         `}
         style={{
           width: `${width}px`,
-          padding: `${paddingY}px ${paddingX}px`,
+          padding: `${paddingY}px`,
           fontSize: `${fontSize}px`,
         }}
       >

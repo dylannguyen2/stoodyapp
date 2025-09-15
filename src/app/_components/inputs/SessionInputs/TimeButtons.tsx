@@ -7,6 +7,8 @@ interface TimeButtonsProps {
   isExiting?: boolean;
   onExited?: () => void;
   sessionCreateState: "stoody" | "shortBreak" | "longBreak" | "cycles";
+  size: number;
+  spacing: number;
 }
 
 export default function TimeButtons({
@@ -15,6 +17,8 @@ export default function TimeButtons({
   isExiting,
   onExited,
   sessionCreateState,
+  size,
+  spacing
 }: TimeButtonsProps) {
 
   const options =
@@ -27,16 +31,20 @@ export default function TimeButtons({
       : [1, 2, 3, 4];
 
   return (
-    <div className="flex flex-wrap justify-center gap-6 min-h-[54px]">
+    <div
+    className="flex flex-wrap justify-center min-h-[54px]"
+    style={{ gap: spacing }}
+    >
       {options.map((opt) => (
         <TimeButton
           key={opt}
-          text={sessionCreateState === 'cycles' ? `${opt} Cycles` : `${opt}m`}
+          text={sessionCreateState === 'cycles' ? `${opt}` : `${opt}m`}
           value={opt}
           currentTime={value}
           onClick={(v) => onChange(v)}
           isExiting={isExiting}
           onExited={onExited}
+          size={size}
         />
       ))}
     </div>

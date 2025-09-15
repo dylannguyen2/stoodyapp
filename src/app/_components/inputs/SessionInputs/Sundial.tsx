@@ -30,9 +30,12 @@ export default function Sundial({
 
   useEffect(() => setInternal(Math.round((value ?? 0) / step) * step), [value, step]);
 
+  // --- size-driven geometry (everything derived from `size`) ---
   const center = size / 2;
-  const radius = center - 22;
-  const stroke = 36;
+  const stroke = Math.max(6, Math.round(size * 0.075));
+  const knobSize = Math.max(28, Math.round(size * 0.2));
+  const knobRadius = knobSize / 2;
+  const radius = center - stroke / 2 ;
 
   const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
 
@@ -57,7 +60,6 @@ export default function Sundial({
   const knob = polar(center, center, radius, endAngle);
   const idSuffixRef = useRef(Math.random().toString(36).slice(2, 8));
   const idSuffix = idSuffixRef.current;
-  const knobSize = 96;
   const visibleHeight = size / 2 + knobSize / 2;
 
   const setFromPointer = (clientX: number, clientY: number) => {

@@ -9,17 +9,19 @@ interface ButtonProps {
   textColour?: string;
   shadow?: string;
   style?: React.CSSProperties;
+  className?: string;
 }
 
 export default function Button(props: ButtonProps) {
   const {
     onClick,
     text,
-    height=32,
+    height,
     width=32,
     gradient,
     shadow,
     textColour="white",
+    className,
     ...otherProps
   } = props;
 
@@ -40,10 +42,11 @@ export default function Button(props: ButtonProps) {
       : `0 4px 0 ${shadowColor}`
     : undefined;
 
-  const baseClass = `px-5 py-2 w-${width} h-${height} rounded-xl ` +
+  const baseClass = `px-5 py-2 rounded-xl whitespace-nowrap ` +
     `bg-gradient-to-b ${gradient} text-${textColour} font-semibold text-base ` +
     `shadow-[0_4px_0px_#${shadow}] hover:shadow-[0_2px_0px_#${shadow}] hover:translate-y-[2px]` +
-    `active:shadow-[0_0px_0px_#${shadow}] active:translate-y-[4px] transition-all duration-150 cursor-pointer`;
+    `active:shadow-[0_0px_0px_#${shadow}] active:translate-y-[4px] transition-all duration-150 cursor-pointer` +
+    (className ? ` ${className}` : ''); 
 
   return (
     <button
@@ -57,6 +60,9 @@ export default function Button(props: ButtonProps) {
         boxShadow,
         transition: 'transform .15s, box-shadow .15s',
         ...props.style,
+        minWidth: width,
+        height: height,
+        // fontSize: Math.max(12, 0.2 * width)
       }}
       className={`${baseClass}`}
     >
