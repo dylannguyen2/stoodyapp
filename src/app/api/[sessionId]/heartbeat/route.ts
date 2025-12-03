@@ -4,9 +4,8 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-type RouteContext = { params: { sessionId: string } };
-
-export async function POST(_req: NextRequest, { params }: RouteContext) {
+export async function POST(_req: NextRequest, context: { params: { sessionId: string } }) {
+  const { params } = context;
   const { sessionId } = params;
 
   // Update lastActiveAt if session exists
