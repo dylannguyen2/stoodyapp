@@ -1,4 +1,4 @@
 declare module 'next-images' {
-  const content: any;
+  const content: unknown;
   export default content;
 }

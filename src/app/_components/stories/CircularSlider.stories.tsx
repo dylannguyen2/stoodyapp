@@ -1,5 +1,5 @@
 import CircularSlider from '../inputs/SessionInputs/CircularSlider';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
 
 const meta: Meta<typeof CircularSlider> = {
   title: 'Components/CircularSlider',

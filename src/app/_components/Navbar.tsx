@@ -1,21 +1,17 @@
 "use client";
 
 import '../../styles/globals.css';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
 
-interface NavbarProps {
-  children?: ReactNode;
-}
-
-export default function Navbar({ children }: NavbarProps) {
+export default function Navbar() {
   const pathname = usePathname() || '/';
 
   return (
   <div className="fixed top-[15px] left-1/2 transform -translate-x-1/2 z-20 w-1/2 h-12 px-6 bg-white bg-opacity-50 border border-[#D9D9D9] rounded-xl drop-shadow-md flex items-center justify-center gap-20">
       <Link href="/">
-        <img src="/logo.svg" alt="Logo" className="h-10 w-auto" />
+        <Image src="/logo.svg" alt="Logo" width={80} height={40} className="h-10 w-auto" priority />
       </Link>
 
       <Link href="/" className="">
@@ -56,5 +52,4 @@ export default function Navbar({ children }: NavbarProps) {
     </div>
   );
 }
-
 

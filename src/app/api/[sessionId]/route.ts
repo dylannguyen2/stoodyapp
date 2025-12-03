@@ -1,9 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function GET(req: NextRequest, { params }: { params: any }) {
+type RouteContext = {
+  params: {
+    sessionId: string;
+  };
+};
+
+export async function GET(_req: NextRequest, { params }: RouteContext) {
   const { sessionId } = params;
   console.log('Requested sessionId:', sessionId);
 

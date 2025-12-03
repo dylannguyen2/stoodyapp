@@ -119,7 +119,6 @@ export default function RulerSlider({
               const isEnd = i === tickCount;
               const tickH = isLong ? Math.max(10, Math.round(sliderHeight * 0.48)) : isMedium ? Math.max(6, Math.round(sliderHeight * 0.32)) : Math.max(4, Math.round(sliderHeight * 0.2));
               const y1 = Math.max(2, Math.round(trackY - tickH / 2));
-              const y2 = Math.min(Math.round(trackY + tickH / 2 + Math.round(sliderHeight * 0.06)), Math.round(sliderHeight));
               return (
                 <g key={i}>
                   <line x1={x} x2={x} y1={y1} y2={y1 + tickH} stroke="#2b1450" strokeWidth={(isStart || isEnd) ? 2.5 : isLong ? 1.6 : 1} strokeOpacity={0.95} />

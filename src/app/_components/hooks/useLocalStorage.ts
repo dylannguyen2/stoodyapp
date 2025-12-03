@@ -10,6 +10,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T)
         setStoredValue(JSON.parse(item) as T);
       }
     } catch (error) {
+      console.error(`Failed to load key "${key}" from localStorage`, error);
     }
   }, [key]);
 
@@ -18,6 +19,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T)
     try {
       window.localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
+      console.error(`Failed to persist key "${key}" to localStorage`, error);
     }
   };
 

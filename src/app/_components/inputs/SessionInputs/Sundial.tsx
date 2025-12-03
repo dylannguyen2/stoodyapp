@@ -34,7 +34,6 @@ export default function Sundial({
   const center = size / 2;
   const stroke = Math.max(6, Math.round(size * 0.075));
   const knobSize = Math.max(28, Math.round(size * 0.2));
-  const knobRadius = knobSize / 2;
   const radius = center - stroke / 2 ;
 
   const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v));
@@ -116,8 +115,10 @@ export default function Sundial({
   const format = (mins: number) => `${mins} mins`;
   const labelText = format(minutes);
   const approxCharWidth = 0.55; // fraction of font size each char typically occupies
-  const maxLabelFont = knobSize * 0.28;
-  const labelFont = Math.max(10, Math.min(maxLabelFont, (knobSize * 0.8) / (labelText.length * approxCharWidth)));
+  const maxLabelFont = knobSize * 0.26;
+  const knobInnerDiameter = knobSize * 0.7;
+  const fittedFont = knobInnerDiameter / Math.max(1, labelText.length * approxCharWidth);
+  const labelFont = Math.max(10, Math.min(maxLabelFont, fittedFont));
 
   return (
    <div
@@ -174,8 +175,9 @@ export default function Sundial({
           {/* minutes label centered on knob */}
           <text
             x={knob.x}
-            y={knob.y + labelFont * 0.35}
+            y={knob.y}
             textAnchor="middle"
+            dominantBaseline="middle"
             fontWeight={700}
             fill="#fff"
             style={{ fontSize: labelFont }}

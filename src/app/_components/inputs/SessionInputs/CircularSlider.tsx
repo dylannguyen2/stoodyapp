@@ -64,7 +64,7 @@ export default function CircularSlider({
       const rawDelta = angle - lastAngleRef.current;
       const signedDelta = ((rawDelta + 540) % 360) - 180;
 
-      if (accumulatedAngleRef.current === null) accumulatedAngleRef.current = lastAngleRef.current;
+      accumulatedAngleRef.current ??= lastAngleRef.current;
       let acc = (accumulatedAngleRef.current ?? angle) + signedDelta;
       acc = Math.max(0, Math.min(360, acc));
       accumulatedAngleRef.current = acc;

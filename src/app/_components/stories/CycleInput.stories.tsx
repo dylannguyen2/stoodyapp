@@ -1,5 +1,5 @@
 import CycleInput from '../inputs/SessionInputs/CycleInput';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
 import { useState } from 'react';
 
 const meta: Meta<typeof CycleInput> = {
@@ -14,7 +14,6 @@ type Story = StoryObj<typeof CycleInput>;
 export const Default: Story = {
   render: () => {
     const [coffee, setCoffee] = useState(0);
-    const sessionCreationStates = ['name', 'stoody', 'shortBreak', 'longBreak', 'cycles'] as const;
     return (
       <div>
       <CycleInput

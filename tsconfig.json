@@ -36,7 +36,8 @@
     "**/*.tsx",
     "**/*.cjs",
     "**/*.js",
-    ".next/types/**/*.ts"
-, "src/app/_components/stories/FlatSlider.stories.tsx"  ],
+    ".next/types/**/*.ts",
+    ".storybook/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }

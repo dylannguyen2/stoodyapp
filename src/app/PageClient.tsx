@@ -18,6 +18,34 @@ const DESKTOP_ARROW_ICON = 30;
 const MOBILE_ARROW_SIZE = 56;
 const MOBILE_ARROW_ICON = 26;
 
+type StoredSession = {
+  name?: string;
+  stoody?: number;
+  shortBreak?: number;
+  longBreak?: number;
+  cycles?: number;
+  cachedAt?: number;
+};
+
+const isStoredSession = (value: unknown): value is StoredSession => {
+  if (typeof value !== 'object' || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  const isOptionalNumber = (val: unknown) => typeof val === 'number' || typeof val === 'undefined';
+  return (
+    (typeof obj.name === 'string' || typeof obj.name === 'undefined') &&
+    isOptionalNumber(obj.stoody) &&
+    isOptionalNumber(obj.shortBreak) &&
+    isOptionalNumber(obj.longBreak) &&
+    isOptionalNumber(obj.cycles)
+  );
+};
+
+type CreateSessionResponse = { sessionId: string };
+
+const isCreateSessionResponse = (value: unknown): value is CreateSessionResponse => {
+  return typeof value === 'object' && value !== null && typeof (value as { sessionId?: unknown }).sessionId === 'string';
+};
+
 export default function PageClient() {
   const router = useRouter();
   const sessionCreationStates = ['cached','name', 'stoody', 'shortBreak', 'longBreak', 'cycles'] as const;
@@ -51,9 +79,11 @@ export default function PageClient() {
 
     // update cached preset payload if present
     try {
-      const payload = { name: vals.name ?? name, stoody: vals.stoody, shortBreak: vals.shortBreak, longBreak: vals.longBreak, cycles: vals.cycles, cachedAt: Date.now() };
+      const payload: StoredSession = { name: vals.name ?? name, stoody: vals.stoody, shortBreak: vals.shortBreak, longBreak: vals.longBreak, cycles: vals.cycles, cachedAt: Date.now() };
       localStorage.setItem('stoody_session_cached', JSON.stringify(payload));
-    } catch {}
+    } catch (error) {
+      console.error('Failed to cache preset', error);
+    }
 
     setEditOpen(false);
   };
@@ -71,23 +101,29 @@ export default function PageClient() {
     try {
       const cached = localStorage.getItem('stoody_session_cached');
       if (cached) {
-        const obj = JSON.parse(cached);
-        if (obj.name) setName(obj.name);
-        if (typeof obj.stoody === 'number') setStoody(obj.stoody);
-        if (typeof obj.shortBreak === 'number') setShortBreak(obj.shortBreak);
-        if (typeof obj.longBreak === 'number') setLongBreak(obj.longBreak);
-        if (typeof obj.cycles === 'number') setCycles(obj.cycles);
-        setHasCachedPreset(true);
-        setSessionCreateState('cached');
-        return;
+        const parsed = JSON.parse(cached) as unknown;
+        if (isStoredSession(parsed)) {
+          if (typeof parsed.name === 'string') setName(parsed.name);
+          if (typeof parsed.stoody === 'number') setStoody(parsed.stoody);
+          if (typeof parsed.shortBreak === 'number') setShortBreak(parsed.shortBreak);
+          if (typeof parsed.longBreak === 'number') setLongBreak(parsed.longBreak);
+          if (typeof parsed.cycles === 'number') setCycles(parsed.cycles);
+          setHasCachedPreset(true);
+          setSessionCreateState('cached');
+          return;
+        }
       }
-    } catch (e) {
+    } catch (error) {
+      console.error('Failed to read cached preset', error);
     }
 
     setHasCachedPreset(false);
-    if (!localStorage.getItem('stoody_name')) {
+    const storedName = localStorage.getItem('stoody_name');
+    if (!storedName) {
       const gen = generateRandomName();
       setName(gen);
+    } else {
+      setName(storedName);
     }
   }, [hydrated]);
 
@@ -116,7 +152,7 @@ export default function PageClient() {
     setSessionCreateState((prev) => {
       const i = sessionCreationStates.indexOf(prev);
       const prevIndex = i > 0 ? i - 1 : 0;
-      return sessionCreationStates[prevIndex] as SessionCreationState;
+      return sessionCreationStates[prevIndex]!;
     });
   };
 
@@ -124,7 +160,7 @@ export default function PageClient() {
     setSessionCreateState((prev) => {
       const i = sessionCreationStates.indexOf(prev);
       const nextIndex = i >= 0 && i < sessionCreationStates.length - 1 ? i + 1 : sessionCreationStates.length - 1;
-      return sessionCreationStates[nextIndex] as SessionCreationState;
+      return sessionCreationStates[nextIndex]!;
     });
   };
 
@@ -134,7 +170,11 @@ export default function PageClient() {
     if (exitedRef.current) return;
     exitedRef.current = true;
     setIsExiting(false);
-    dirRef.current === 'next' ? nextSessionState() : prevSessionState();
+    if (dirRef.current === 'next') {
+      nextSessionState();
+    } else {
+      prevSessionState();
+    }
   };
 
   const handleNextClick = () => {
@@ -184,20 +224,21 @@ export default function PageClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, stoody, shortBreak, longBreak, cycles, deviceId }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.sessionId) {
+      const data: unknown = await res.json();
+      if (!res.ok || !isCreateSessionResponse(data)) {
         alert('Failed to create session. Response: ' + JSON.stringify(data));
         return;
       }
       try {
-        const payload = { name, stoody, shortBreak, longBreak, cycles, cachedAt: Date.now() };
+        const payload: StoredSession = { name, stoody, shortBreak, longBreak, cycles, cachedAt: Date.now() };
         localStorage.setItem('stoody_session_cached', JSON.stringify(payload));
-      } catch (e) {
+      } catch (error) {
+        console.error('Failed to persist cached session', error);
       }
       router.push(`/session/${data.sessionId}`);
     } catch (error) {
       console.error('Error creating session:', error);
-      alert('Error creating session: ' + error);
+      alert(`Error creating session: ${String(error)}`);
     }
   };
 
@@ -214,14 +255,14 @@ export default function PageClient() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-hidden bg-[#fefefe] text-[#150a2f]">
+    <div className="relative flex min-h-screen w-full flex-col overflow-hidden text-[#150a2f]">
       <div
-        className="pointer-events-none absolute inset-0 -z-10"
+        className="pointer-events-none absolute inset-0 -z-20"
         style={{
           backgroundColor: '#ffffff',
           backgroundImage:
-            'linear-gradient(0deg, rgba(196,189,224,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(196,189,224,0.35) 1px, transparent 1px)',
-          backgroundSize: '80px 80px',
+            'linear-gradient(0deg, rgba(177,168,229,0.28) 1px, transparent 1px), linear-gradient(90deg, rgba(177,168,229,0.28) 1px, transparent 1px)',
+          backgroundSize: '60px 60px',
         }}
       />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-transparent to-[#f8f5ff]" />

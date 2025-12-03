@@ -8,33 +8,22 @@ import AudioIcon from './icons/AudioIcon';
 import CircularButton from './inputs/CircularButton';
 import BackIcon from './icons/BackIcon';
 import NextIcon from './icons/NextIcon';
-import useWindowSize from './hooks/useWindowSize';
 // import EditUI from './inputs/EditUI';
-
-
-
-type Settings = { stoody: number; shortBreak: number; longBreak: number; cycles: number };
-
 interface TimerProps {
   stoody: number;
   shortBreak: number;
   longBreak: number;
   cycles: number;
   onPhaseChange?: (phase: 'stoody' | 'shortBreak' | 'longBreak' | 'transition') => void;
-  onSettingsSave?: (s: Settings) => void;
-  editOpen?: boolean;
   onEditOpenChange?: (open: boolean) => void;
 }
-export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseChange, onSettingsSave, editOpen: editOpenProp, onEditOpenChange }: TimerProps) {
+export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseChange, onEditOpenChange }: TimerProps) {
   const [localStoody, setLocalStoody] = useState<number>(stoody);
   const [localShortBreak, setLocalShortBreak] = useState<number>(shortBreak);
   const [localLongBreak, setLocalLongBreak] = useState<number>(longBreak);
   const [localCycles, setLocalCycles] = useState<number>(cycles);
-  const [internalEditOpen, setInternalEditOpen] = useState(false);
-  const editOpen = typeof editOpenProp === 'boolean' ? editOpenProp : internalEditOpen;
   const setEditOpen = (v: boolean) => {
     if (typeof onEditOpenChange === 'function') onEditOpenChange(v);
-    else setInternalEditOpen(v);
   };
 
   useEffect(() => setLocalStoody(stoody), [stoody]);
@@ -55,7 +44,6 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
 
   const timeline = ['stoody', 'shortBreak', 'stoody', 'shortBreak', 'stoody', 'longBreak'];
   const timePerCycle = 3 * localStoody + 2 * localShortBreak + localLongBreak;
-  const { width, height } = useWindowSize();
 
   function timeRemaining() {
     let time = 0;
@@ -75,7 +63,7 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
       else if (currentPhase === 'longBreak') time += localLongBreak;
           temp++;
     }
-    let numberFullCyclesLeft = cycles - cycleCount;
+    const numberFullCyclesLeft = cycles - cycleCount;
     time += numberFullCyclesLeft * timePerCycle;
     return time;
   }
@@ -98,8 +86,8 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
   }
 
   function setNextPhase(phase: string) {
-    let time = phase === 'stoody' ? localStoody * 60 : phase === 'shortBreak' ? localShortBreak * 60 : phase === 'longBreak' ? localLongBreak * 60 : 5;
-    let numSteps = findNextPhase(phase);
+    const time = phase === 'stoody' ? localStoody * 60 : phase === 'shortBreak' ? localShortBreak * 60 : phase === 'longBreak' ? localLongBreak * 60 : 5;
+    const numSteps = findNextPhase(phase);
 
     if (step + numSteps >= timeline.length) {
       setStep((step + numSteps) % timeline.length); 
@@ -148,6 +136,7 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
       a.preload = 'auto';
       audioRef.current = a;
     } catch (err) {
+      console.error('Failed to preload audio', err);
       audioRef.current = null;
     }
     return () => {
@@ -169,7 +158,8 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
           audioRef.current.currentTime = 0;
           void audioRef.current.play();
         }
-      } catch (e) {
+      } catch (err) {
+        console.error('Failed to play audio', err);
       }
     }
     handleSkip();
@@ -297,172 +287,76 @@ export default function Timer({ stoody, shortBreak, longBreak, cycles, onPhaseCh
   }, [handlePausePlay, handlePrevStep, handleNextStep]);
 
   //////////////////////////////////////////////////////////////////////////
-  // UI SIZING
+  // UI SIZING (breakpoint-driven presets)
   //////////////////////////////////////////////////////////////////////////
 
-  const GLOBAL_SCALE = 0.85;
+  const SVG_BASE_SIZE = 360;
+  const center = SVG_BASE_SIZE / 2;
+  const strokeWidth = 32;
+  const radius = center - strokeWidth / 2;
 
-  const BASE_SIZE = 600;
+  const timerFontClass = 'text-[clamp(2.5rem,6vw,4rem)]';
+  const controlLabelClass = 'text-sm sm:text-base';
+  const nextLabelClass = 'text-xs sm:text-sm text-[#6B7280]';
 
-const shortestSide = Math.min(width, height);
-const longestSide = Math.max(width, height);
+  const phaseButtonSize = 110;
+  const phaseButtonGap = 'gap-2 sm:gap-4';
 
-// scaleFactor grows with viewport, clamped for usability
-const scaleFactor = Math.max(0.5, Math.min(2, shortestSide / BASE_SIZE));
+  const desktopArrowSize = 74;
+  const desktopArrowIcon = 34;
+  const mobileArrowSize = 56;
+  const mobileArrowIcon = 26;
 
-const MIN_SVG_SIZE = 220;
-const svgSize = Math.max(MIN_SVG_SIZE, Math.round(shortestSide * 0.5 * GLOBAL_SCALE));
-const center = svgSize / 2;
-const strokeWidth = Math.max(4, 0.15 * center);
-const radius = center - strokeWidth / 2;
-const timerFont = Math.max(18, Math.round(28 * scaleFactor))
-
-const headerFontSize = Math.max(16, Math.round(svgSize * 0.06));
-
-const phaseButtonSpacing = 0.0625 * svgSize;
-const phaseButtonSize = Math.max(1.25 * 0.33 * (svgSize - 2 * phaseButtonSpacing), 84);
-
-const iconSize = Math.max(20, 0.075 * svgSize);
-const arrowSpacing = 0.1 * svgSize;
-const arrowSize = Math.max(48, 0.12 * svgSize);
-const arrowIconSize = Math.round(arrowSize * 0.6);
-
-const nextPhasePadding = Math.max(8, 0.045 * svgSize);
-
-const controlSize = Math.max(48, 0.16 * svgSize);
-const controlFont = 1/4 * controlSize;
-
-const gapSize = Math.max(32, 0.1 * svgSize);
-
-//////
-
-const containerRef = useRef<HTMLDivElement | null>(null);
-const [showArrows, setShowArrows] = useState(true);
-
-const horizontalPadding = Math.max(12, Math.round(0.12 * svgSize));
-
-const rafRef = useRef<number | null>(null);
-const lastShowRef = useRef<boolean | null>(null);
-
-useEffect(() => {
-  const el = containerRef.current;
-  if (!el) return;
-
-  const measure = () => {
-    if (!containerRef.current) return;
-    const containerWidth = containerRef.current.offsetWidth;
-    const totalNeeded = 2 * (arrowSize + 2 * arrowSpacing) + svgSize;
-    const shouldShow = totalNeeded <= containerWidth;
-    if (lastShowRef.current !== shouldShow) {
-      lastShowRef.current = shouldShow;
-      setShowArrows(shouldShow);
-    }
-  };
-
-  const ro = new ResizeObserver(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(measure);
-  });
-  ro.observe(el);
-
-  const onWin = () => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(measure);
-  };
-  window.addEventListener('resize', onWin, { passive: true });
-
-  measure();
-
-  return () => {
-    ro.disconnect();
-    window.removeEventListener('resize', onWin);
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-  };
-}, [svgSize, arrowSize, arrowSpacing, horizontalPadding]);
+  const controlButtonSize = 80;
+  const iconSizeDesktop = 32;
+  const iconSizeMobile = 26;
 
   const valueRatio = useMemo(() => clamp(timer / Math.max(1, totalSeconds), 0, 1), [timer, totalSeconds]);
-  const startAngle = 0;
-  const endAngle = useMemo(() => startAngle + valueRatio * 360, [valueRatio]);
   const circumference = useMemo(() => 2 * Math.PI * radius, [radius]);
   const dashOffset = useMemo(() => circumference * (1 - valueRatio), [circumference, valueRatio]);
 
-  const isAtStart = cycleCount === 1 && step <= 0;
   const isFinished = cycleCount === cycles && phase === 'longBreak';
 
   return (
-    <div
-    ref={containerRef}
-    className="flex flex-col items-center w-full">
-      <h1
-        className="text-2xl text-black inter-bold"
-        style={{ fontSize: headerFontSize, paddingBottom: arrowSpacing}}
-        >
-        Cycle: {cycleCount} of {cycles}: {percentComplete}% complete
+    <div className="flex w-full flex-col items-center">
+      <h1 className="inter-bold text-center text-base text-black sm:text-lg lg:text-xl">
+        Cycle {cycleCount} of {cycles} — {percentComplete}% complete
       </h1>
-      <div className="flex"
-        style={{ gap: phaseButtonSpacing, alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+
+      <div className={`mt-4 flex flex-wrap items-center justify-center ${phaseButtonGap}`}>
         <PhaseButton onClick={setNextPhase} currentPhase={phase} phase="stoody" size={phaseButtonSize} />
         <PhaseButton onClick={setNextPhase} currentPhase={phase} phase="shortBreak" size={phaseButtonSize} />
         <PhaseButton onClick={setNextPhase} currentPhase={phase} phase="longBreak" size={phaseButtonSize} />
       </div>
-      
-      <div
-        className="relative flex items-center justify-center"
-        style={{
-          // width: 'clamp(260px, 100vw, 1200px)',
-          paddingTop: arrowSpacing,
-          paddingLeft: horizontalPadding,
-          paddingRight: horizontalPadding,
-          gap: arrowSpacing,
-          boxSizing: 'border-box',
-        }}
-      >
-        <div
-          className="flex-shrink-0"
-          style={{
-            width: arrowSize,
-            height: arrowSize,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {(!isAtStart) && showArrows && (
-            <CircularButton
-              icon={<BackIcon width={arrowIconSize} height={arrowIconSize} />}
-              onClick={handlePrevStep}
-              gradient={
-                phase === "stoody" ? "from-[#C18FFF] to-[#8B5CF6]"
-                : phase === "shortBreak" ? "from-[#2BB5A3] to-[#1E8771]"
-                : phase === "longBreak" ? "from-[#4CAF50] to-[#3D9440]"
-                : "from-[#9CA3AF] to-[#6B7280]"
-               }
-               shadow={
-                phase === "stoody" ? "8B5CF6"
-                : phase === "shortBreak" ? "1E8771"
-                : phase === "longBreak" ? "3D9440"
-                : "6B7280"
-               }
-              title="Back"
-              size={arrowSize}
-            />
-          )}
+
+      <div className="mt-6 flex w-full flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-center sm:gap-10">
+        <div className="hidden sm:flex">
+          <CircularButton
+            icon={<BackIcon width={desktopArrowIcon} height={desktopArrowIcon} />}
+            onClick={handlePrevStep}
+            gradient={
+              phase === "stoody" ? "from-[#C18FFF] to-[#8B5CF6]"
+              : phase === "shortBreak" ? "from-[#2BB5A3] to-[#1E8771]"
+              : phase === "longBreak" ? "from-[#4CAF50] to-[#3D9440]"
+              : "from-[#9CA3AF] to-[#6B7280]"
+            }
+            shadow={
+              phase === "stoody" ? "8B5CF6"
+              : phase === "shortBreak" ? "1E8771"
+              : phase === "longBreak" ? "3D9440"
+              : "6B7280"
+            }
+            title="Back"
+            size={desktopArrowSize}
+          />
         </div>
-        
-        {/* svg wrapper: don't let flex shrink it */}
-        <div className="relative flex items-center justify-center" style={{ flex: "1 1 auto" }}>
+
+        <div className="relative w-full max-w-[min(90vw,380px)] sm:max-w-[420px] lg:max-w-[480px]">
           <svg
-            width={svgSize}
-            height={svgSize}
-            viewBox={`0 0 ${svgSize} ${svgSize}`}
+            width="100%"
+            height="100%"
+            viewBox={`0 0 ${SVG_BASE_SIZE} ${SVG_BASE_SIZE}`}
             preserveAspectRatio="xMidYMid meet"
-            className=""
-            style={{
-              minWidth: `${MIN_SVG_SIZE}px`,
-              minHeight: `${MIN_SVG_SIZE}px`,
-              flexShrink: 0,
-              display: 'block',
-            }}
           >
           {/* Track */}
           <circle cx={center} cy={center} r={radius} stroke="#E6E6E6" strokeWidth={strokeWidth} fill="none" />
@@ -527,125 +421,149 @@ useEffect(() => {
           </svg>
 
           {/* overlay moved inside svg wrapper so it's centered on the circle */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="flex items-center gap-2 pointer-events-auto">
-              {width > 350 && (<button
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 shadow-sm backdrop-blur">
+              <button
                 aria-label="Mute timer audio"
                 title="Mute timer audio"
                 onClick={() => audioToggle()}
-                className="p-1 rounded-md hover:bg-black/5 cursor-pointer"
-                style={{ width: iconSize + 6, height: iconSize + 6 }}
+                className="hidden sm:flex items-center justify-center rounded-md hover:bg-black/5"
+                style={{ width: iconSizeDesktop, height: iconSizeDesktop }}
               >
-                <AudioIcon
-                  silent={!audioOn}
-                  phase={phase}
-                  width={iconSize}
-                  height={iconSize}
-                />
+                <AudioIcon silent={!audioOn} phase={phase} width={iconSizeDesktop} height={iconSizeDesktop} />
               </button>
-              )}
- 
-              <span style={{ fontSize: timerFont }} className="font-extrabold inter-bold">
-               {`${String(Math.floor(timer / 60)).padStart(2, '0')}:${String(timer % 60).padStart(2, '0')}`}
-               </span>
- 
-              {width > 350 && (<button
+
+              <span className={`font-extrabold inter-bold ${timerFontClass}`}>
+                {`${String(Math.floor(timer / 60)).padStart(2, '0')}:${String(timer % 60).padStart(2, '0')}`}
+              </span>
+
+              <button
                 aria-label="Edit session settings"
                 title="Edit session settings"
                 onClick={() => setEditOpen(true)}
-                className="p-1 rounded-md hover:bg-black/5 cursor-pointer"
-                style={{ width: iconSize + 6, height: iconSize + 6 }}
+                className="hidden sm:flex items-center justify-center rounded-md hover:bg-black/5"
+                style={{ width: iconSizeDesktop, height: iconSizeDesktop }}
               >
-                <StoodyIcon
-                  width={iconSize}
-                  height={iconSize}
-                  phase={phase}
-                />
+                <StoodyIcon width={iconSizeDesktop} height={iconSizeDesktop} phase={phase} />
               </button>
-              )}
             </div>
           </div>
         </div>
- 
-         {/* next button: positioned to the right */}
-           <div
-              className="flex-shrink-0"
-              style={{
-                width: arrowSize,
-                height: arrowSize,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-             {(!isFinished) && showArrows && (
-             <CircularButton
-               icon={<NextIcon
-                height={arrowIconSize}
-                width={arrowIconSize}
-                />}
-               onClick={handleNextStep}
-               gradient={
+
+        <div className="hidden sm:flex">
+          {!isFinished && (
+            <CircularButton
+              icon={<NextIcon height={desktopArrowIcon} width={desktopArrowIcon} />}
+              onClick={handleNextStep}
+              gradient={
                 phase === "stoody" ? "from-[#C18FFF] to-[#8B5CF6]"
                 : phase === "shortBreak" ? "from-[#2BB5A3] to-[#1E8771]"
                 : phase === "longBreak" ? "from-[#4CAF50] to-[#3D9440]"
                 : "from-[#9CA3AF] to-[#6B7280]"
-               }
-               shadow={
+              }
+              shadow={
                 phase === "stoody" ? "8B5CF6"
                 : phase === "shortBreak" ? "1E8771"
                 : phase === "longBreak" ? "3D9440"
                 : "6B7280"
-               }
-               title="Next"
-               size={arrowSize}
-             />
-             )}
-           </div>
-        
+              }
+              title="Next"
+              size={desktopArrowSize}
+            />
+          )}
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-center gap-4 sm:hidden">
+        <CircularButton
+          icon={<BackIcon width={mobileArrowIcon} height={mobileArrowIcon} />}
+          onClick={handlePrevStep}
+          gradient={
+            phase === "stoody" ? "from-[#C18FFF] to-[#8B5CF6]"
+            : phase === "shortBreak" ? "from-[#2BB5A3] to-[#1E8771]"
+            : phase === "longBreak" ? "from-[#4CAF50] to-[#3D9440]"
+            : "from-[#9CA3AF] to-[#6B7280]"
+          }
+          shadow={
+            phase === "stoody" ? "8B5CF6"
+            : phase === "shortBreak" ? "1E8771"
+            : phase === "longBreak" ? "3D9440"
+            : "6B7280"
+          }
+          title="Back"
+          size={mobileArrowSize}
+        />
+        {!isFinished && (
+          <CircularButton
+            icon={<NextIcon height={mobileArrowIcon} width={mobileArrowIcon} />}
+            onClick={handleNextStep}
+            gradient={
+              phase === "stoody" ? "from-[#C18FFF] to-[#8B5CF6]"
+              : phase === "shortBreak" ? "from-[#2BB5A3] to-[#1E8771]"
+              : phase === "longBreak" ? "from-[#4CAF50] to-[#3D9440]"
+              : "from-[#9CA3AF] to-[#6B7280]"
+            }
+            shadow={
+              phase === "stoody" ? "8B5CF6"
+              : phase === "shortBreak" ? "1E8771"
+              : phase === "longBreak" ? "3D9440"
+              : "6B7280"
+            }
+            title="Next"
+            size={mobileArrowSize}
+          />
+        )}
+      </div>
+
+      <div className="mt-4 flex items-center justify-center gap-6 sm:hidden">
+        <button
+          aria-label="Mute timer audio"
+          title="Mute timer audio"
+          onClick={() => audioToggle()}
+          className="flex items-center justify-center rounded-md bg-white/80 p-2 shadow-sm"
+          style={{ width: iconSizeMobile + 8, height: iconSizeMobile + 8 }}
+        >
+          <AudioIcon silent={!audioOn} phase={phase} width={iconSizeMobile} height={iconSizeMobile} />
+        </button>
+        <button
+          aria-label="Edit session settings"
+          title="Edit session settings"
+          onClick={() => setEditOpen(true)}
+          className="flex items-center justify-center rounded-md bg-white/80 p-2 shadow-sm"
+          style={{ width: iconSizeMobile + 8, height: iconSizeMobile + 8 }}
+        >
+          <StoodyIcon width={iconSizeMobile} height={iconSizeMobile} phase={phase} />
+        </button>
       </div>
 
       <div
-      className="text-[#6B7280]"
-      style={{ 
-        paddingTop: nextPhasePadding,
-        paddingBottom: nextPhasePadding,
-        fontSize: controlFont,
-       }}>
+        className={`mt-6 text-center ${nextLabelClass}`}
+      >
         Next: {nextPhase()}
       </div>
 
-      <div className="flex mt-1" style={{ gap: `${gapSize}px` }}>
+      <div className="mt-6 grid w-full gap-6 sm:mt-8 sm:flex sm:justify-center sm:gap-10">
         <div className="flex flex-col items-center">
-          <Reset onClick={handleReset} size={controlSize} />
-          <div 
-            className={`mt-2 bg-gradient-to-r from-[#F87171] to-[#DC2626] bg-clip-text text-transparent`}
-            style={{ fontSize: controlFont }}
-          >
+          <Reset onClick={handleReset} size={controlButtonSize} />
+          <div className={`mt-2 bg-gradient-to-r from-[#F87171] to-[#DC2626] bg-clip-text text-transparent ${controlLabelClass}`}>
             Reset
           </div>
         </div>
         <div className="flex flex-col items-center">
-          <Playback onClick={handlePausePlay} sessionState={phase} isRunning={isRunning} size={controlSize} />
-          <div
-            className={`mt-2 bg-gradient-to-r bg-clip-text text-transparent
-              ${phase === "stoody" ? "from-[#C18FFF] to-[#8B5CF6]" 
-              : phase === "shortBreak" ? "from-[#2BB5A3] to-[#1E8771]" 
-              : phase === "longBreak" ? "from-[#4CAF50] to-[#3D9440]" 
-              : "from-[#9CA3AF] to-[#6B7280]"}
-            `}
-            style={{ fontSize: controlFont }}
-          >
+          <Playback onClick={handlePausePlay} sessionState={phase} isRunning={isRunning} size={controlButtonSize} />
+          <div className={`mt-2 bg-gradient-to-r bg-clip-text text-transparent ${controlLabelClass}
+            ${phase === "stoody" ? "from-[#C18FFF] to-[#8B5CF6]"
+            : phase === "shortBreak" ? "from-[#2BB5A3] to-[#1E8771]"
+            : phase === "longBreak" ? "from-[#4CAF50] to-[#3D9440]"
+            : "from-[#9CA3AF] to-[#6B7280]"}
+          `}>
             {isRunning ? 'Pause' : 'Play'}
           </div>
 
         </div>
         <div className="flex flex-col items-center">
-          <Skip onClick={handleSkip} size={controlSize} />
-          <div
-            className={`mt-2 text-lg bg-gradient-to-r from-[#3B82F6] to-[#60A5FA] bg-clip-text text-transparent`}
-            style={{ fontSize: controlFont }}
-          >
+          <Skip onClick={handleSkip} size={controlButtonSize} />
+          <div className={`mt-2 bg-gradient-to-r from-[#3B82F6] to-[#60A5FA] bg-clip-text text-transparent ${controlLabelClass}`}>
             Skip
           </div>
         </div>
@@ -653,6 +571,3 @@ useEffect(() => {
      </div>
    );
  }
-
-
-

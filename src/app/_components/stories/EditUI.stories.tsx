@@ -1,5 +1,5 @@
 import EditUI from '../inputs/EditUI';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
 
 const meta: Meta<typeof EditUI> = {
   title: 'Components/EditUI',

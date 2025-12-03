@@ -1,5 +1,5 @@
 import TimeButton from '../inputs/SessionInputs/TimeButton';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
 
 const meta: Meta<typeof TimeButton> = {
   title: 'Components/TimeButton',

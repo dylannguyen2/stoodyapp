@@ -6,13 +6,13 @@ interface StickyNotesProps {
   name: string;
   setName: (v: string) => void;
   nextSessionState: () => void;
-  handleStartSession: () => void;
+  handleStartSession?: () => void;
   isExiting?: boolean;
   onExited?: () => void;
   size: number;
 }
 
-export default function StickyNotes({ name, setName, nextSessionState, handleStartSession, isExiting: parentExiting = false, onExited, size }: StickyNotesProps) {
+export default function StickyNotes({ name, setName, nextSessionState, handleStartSession: _handleStartSession, isExiting: parentExiting = false, onExited, size }: StickyNotesProps) {
   const [isExiting, setIsExiting] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -79,7 +79,7 @@ export default function StickyNotes({ name, setName, nextSessionState, handleSta
     num: number;
     bg: string;
     style: React.CSSProperties;
-    pointerEvents?: string;
+    pointerEvents?: React.CSSProperties['pointerEvents'];
   }[] = [
     {
       num: 3,
@@ -137,14 +137,14 @@ export default function StickyNotes({ name, setName, nextSessionState, handleSta
           transition: 'transform 200ms ease-in-out, opacity 200ms ease-in-out',
           background: bg,
           ...style,
-          pointerEvents: pointerEvents as any,
+          pointerEvents,
         };
 
-        const exitClass = isExiting ? exitTransforms[num] : '';
+        const exitClass = isExiting ? exitTransforms[num] : undefined;
         const styleWithExit = isExiting ? { ...baseStyle } : baseStyle;
         if (isExiting) {
           // apply transform string as inline transform if exiting
-          styleWithExit.transform = exitClass || baseStyle.transform;
+          styleWithExit.transform = exitClass ?? baseStyle.transform;
         }
 
         return (

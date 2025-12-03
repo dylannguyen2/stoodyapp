@@ -53,6 +53,10 @@ export default function EditUI({ initial = {}, onSave, onCancel }: Props) {
   const inputStyle =
     'mt-1 px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:outline-none text-gray-900 placeholder-gray-400 shadow-sm';
 
+  const handleCancel = () => {
+    onCancel?.();
+  };
+
   return (
     <motion.div
       className="max-w-md w-full p-6 bg-white rounded-2xl shadow-xl"
@@ -130,7 +134,7 @@ export default function EditUI({ initial = {}, onSave, onCancel }: Props) {
       <div className="mt-6 flex justify-center items-center w-full">
         <div className="flex gap-3 w-full justify-center">
           <Button
-            onClick={onCancel ?? (() => {})}
+            onClick={handleCancel}
             text="Cancel"
             gradient="from-gray-300 to-gray-200"
             shadow="bdbdbd"

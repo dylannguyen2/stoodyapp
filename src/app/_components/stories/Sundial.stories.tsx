@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Sundial from '../inputs/SessionInputs/Sundial';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
 
 const meta: Meta<typeof Sundial> = {
   title: 'Components/Sundial',

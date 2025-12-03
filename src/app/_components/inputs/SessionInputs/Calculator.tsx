@@ -2,6 +2,100 @@
 
 import React, { useState, useEffect } from "react";
 
+const operatorPrecedence: Record<string, number> = {
+  '+': 1,
+  '-': 1,
+  '*': 2,
+  '/': 2,
+};
+
+const isOperator = (token: string) => token in operatorPrecedence;
+
+const evaluateExpression = (raw: string): number | null => {
+  const sanitized = raw.replace(/[^0-9.+\-*/()]/g, '');
+  if (!sanitized.trim()) return null;
+  const tokens = sanitized.match(/(\d+\.\d+|\d+|[()+\-*/])/g);
+  if (!tokens) return null;
+
+  const normalized: string[] = [];
+  tokens.forEach((token, index) => {
+    if (
+      token === '-' &&
+      (index === 0 || isOperator(tokens[index - 1]) || tokens[index - 1] === '(')
+    ) {
+      normalized.push('0');
+    }
+    normalized.push(token);
+  });
+
+  const output: (number | string)[] = [];
+  const stack: string[] = [];
+
+  for (const token of normalized) {
+    if (isOperator(token)) {
+      while (
+        stack.length > 0 &&
+        isOperator(stack[stack.length - 1]) &&
+        operatorPrecedence[stack[stack.length - 1]] >= operatorPrecedence[token]
+      ) {
+        output.push(stack.pop()!);
+      }
+      stack.push(token);
+    } else if (token === '(') {
+      stack.push(token);
+    } else if (token === ')') {
+      while (stack.length > 0 && stack[stack.length - 1] !== '(') {
+        output.push(stack.pop()!);
+      }
+      if (stack.pop() !== '(') {
+        return null;
+      }
+    } else {
+      output.push(parseFloat(token));
+    }
+  }
+
+  while (stack.length > 0) {
+    const top = stack.pop();
+    if (!top || top === '(' || top === ')') return null;
+    output.push(top);
+  }
+
+  const valueStack: number[] = [];
+  for (const token of output) {
+    if (typeof token === 'number') {
+      valueStack.push(token);
+    } else if (isOperator(token)) {
+      const b = valueStack.pop();
+      const a = valueStack.pop();
+      if (a === undefined || b === undefined) return null;
+      switch (token) {
+        case '+':
+          valueStack.push(a + b);
+          break;
+        case '-':
+          valueStack.push(a - b);
+          break;
+        case '*':
+          valueStack.push(a * b);
+          break;
+        case '/':
+          if (b === 0) return null;
+          valueStack.push(a / b);
+          break;
+        default:
+          return null;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  if (valueStack.length !== 1) return null;
+  const result = valueStack[0];
+  return Number.isFinite(result) ? result : null;
+};
+
 interface CalculatorCyclesProps {
   cycles: number;
   setCycles: (n: number) => void;
@@ -46,8 +140,13 @@ export default function CalculatorCycles({ cycles, setCycles, isExiting = false,
       if (!expression) return;
       try {
         const sanitized = expression.replace(/(^|[^0-9.])0+([0-9]+)/g, (_m, p1, p2) => `${p1}${p2}`);
-        const result = new Function(`return ${sanitized}`)();
-        const bounded = Math.max(0, Math.min(99, Math.floor(Number(result))));
+        const evaluation = evaluateExpression(sanitized);
+        if (evaluation === null) {
+          setExpression("Err");
+          setJustEvaluated(true);
+          return;
+        }
+        const bounded = Math.max(0, Math.min(99, Math.floor(evaluation)));
         setCycles(bounded);
         setExpression(bounded.toString());
         setJustEvaluated(true);

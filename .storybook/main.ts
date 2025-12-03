@@ -1,5 +1,5 @@
 import type { StorybookConfig } from "@storybook/nextjs-vite";
-// @ts-ignore - vite-plugin-svgr has no bundled types for this config file
+import type { PluginOption } from 'vite';
 import svgr from 'vite-plugin-svgr';
 
 const config: StorybookConfig = {
@@ -24,9 +24,9 @@ const config: StorybookConfig = {
   ,
   async viteFinal(config) {
     // register vite-plugin-svgr so `.svg` files can be imported as React components in Storybook
-  config.plugins = config.plugins || [];
-  // cast to any to avoid type mismatches between different vite/rollup instances in monorepo setups
-  config.plugins.push(svgr() as any);
+    const plugins = config.plugins ?? [];
+    plugins.push(svgr() as PluginOption);
+    config.plugins = plugins;
     return config;
   }
 };

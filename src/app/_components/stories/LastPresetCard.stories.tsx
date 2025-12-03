@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
 import LastPresetCard from '../cards/LastPresetCard';
 
 const meta: Meta<typeof LastPresetCard> = {

@@ -45,7 +45,7 @@ export default function CircularButton(props: ButtonProps) {
   const baseClass =
     `flex items-center justify-center ` +
     `rounded-full ` +
-    `bg-gradient-to-b ${gradient || ''} ` +
+    `bg-gradient-to-b ${gradient ?? ''} ` +
     `text-${textColour} font-semibold text-base ` +
     `transition-all duration-150 cursor-pointer`;
 
@@ -65,8 +65,8 @@ export default function CircularButton(props: ButtonProps) {
         ...props.style,
       }}
       className={baseClass}
-      title={title}               // <-- added title attribute (native tooltip)
-      aria-label={title || (typeof text === 'string' ? text : undefined)} // accessible label
+      title={title}
+      aria-label={title ?? (typeof text === 'string' ? text : undefined)}
     >
       {icon ?? text}
     </button>

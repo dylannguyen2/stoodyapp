@@ -1,30 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function PATCH(req: NextRequest, context: { params: Promise<{ sessionId: string }> }) {
-  const { sessionId } = await context.params;
-  try {
-    const body = await req.json();
-    const { stoody, shortBreak, longBreak, cycles } = body ?? {};
+type RouteContext = { params: { sessionId: string } };
 
-    if (
-      typeof stoody !== 'number' || stoody < 1 ||
-      typeof shortBreak !== 'number' || shortBreak < 1 ||
-      typeof longBreak !== 'number' || longBreak < 1 ||
-      typeof cycles !== 'number' || cycles < 1
-    ) {
+type SessionSettings = {
+  stoody: number;
+  shortBreak: number;
+  longBreak: number;
+  cycles: number;
+};
+
+const isValidSettings = (value: unknown): value is SessionSettings => {
+  if (typeof value !== 'object' || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  const isPositive = (val: unknown) => typeof val === 'number' && Number.isFinite(val) && val > 0;
+  return isPositive(obj.stoody) && isPositive(obj.shortBreak) && isPositive(obj.longBreak) && isPositive(obj.cycles);
+};
+
+export async function PATCH(req: NextRequest, { params }: RouteContext) {
+  const { sessionId } = params;
+  try {
+    const body = (await req.json()) as unknown;
+    if (!isValidSettings(body)) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
     const updated = await prisma.guestSession.update({
       where: { id: sessionId },
       data: {
-        stoody,
-        shortBreak,
-        longBreak,
-        cycles,
+        stoody: body.stoody,
+        shortBreak: body.shortBreak,
+        longBreak: body.longBreak,
+        cycles: body.cycles,
         lastActiveAt: new Date(),
       },
     });

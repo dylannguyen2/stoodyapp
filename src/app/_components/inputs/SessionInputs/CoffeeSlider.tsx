@@ -73,6 +73,12 @@ const viewBoxHeight = viewBoxMaxY - viewBoxMinY;
   // font sizing proportional to visible svg height
   const labelFontSize = Math.max(10, Math.round(svgHeight * 0.1));
 
+  const handleSliderChange = (next: number) => {
+    if (onChange) {
+      onChange(next);
+    }
+  };
+
   return (
     <div
       className={`flex flex-col items-center transform transition-transform transition-opacity duration-200 ease-out ${
@@ -86,7 +92,7 @@ const viewBoxHeight = viewBoxMaxY - viewBoxMinY;
     >
       {isExiting && onExited ? <ExitCaller onExited={onExited} /> : null}
 
-      <div className="relative border border-red-500" style={{ width: svgWidth }}>
+      <div className="relative" style={{ width: svgWidth }}>
         <svg
           width="100%"
           height="auto"
@@ -190,7 +196,7 @@ const viewBoxHeight = viewBoxMaxY - viewBoxMinY;
       className="w-full flex justify-center"
       style={{paddingTop: svgHeight * 0.1, paddingBottom: svgHeight * 0.1}}
       >
-        <FlatSlider value={value} onChange={onChange ?? (() => {})} min={min} max={maxMinutes} step={step} sliderWidth={svgWidth * 1.2} />
+        <FlatSlider value={value} onChange={handleSliderChange} min={min} max={maxMinutes} step={step} sliderWidth={svgWidth * 1.2} />
       </div>
     </div>
   );

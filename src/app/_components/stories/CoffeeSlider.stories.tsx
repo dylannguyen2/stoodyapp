@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import CoffeeSlider from '../inputs/SessionInputs/CoffeeSlider';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
 
 const meta: Meta<typeof CoffeeSlider> = {
   title: 'Components/CoffeeSlider',

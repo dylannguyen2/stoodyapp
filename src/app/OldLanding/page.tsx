@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from './../_components/Navbar';
 
+type CreateSessionResponse = {
+  sessionId?: string;
+};
+
 export default function PageClient() {
   const router = useRouter();
 
@@ -15,9 +19,9 @@ export default function PageClient() {
   const [deviceId, setDeviceId] = useState('');
 
   useEffect(() => {
-    let id = localStorage.getItem('stoody_device_id');
-    if (!id) {
-      id = Math.random().toString(36).substring(2, 10) + Date.now().toString(36).slice(-4);
+    const existingId = localStorage.getItem('stoody_device_id');
+    const id = existingId ?? `${Math.random().toString(36).substring(2, 10)}${Date.now().toString(36).slice(-4)}`;
+    if (!existingId) {
       localStorage.setItem('stoody_device_id', id);
     }
     setDeviceId(id);
@@ -31,7 +35,7 @@ export default function PageClient() {
         body: JSON.stringify({ name, stoody, shortBreak, longBreak, cycles, deviceId }),
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as CreateSessionResponse;
       console.log('Session creation response:', data);
 
       if (!res.ok || !data.sessionId) {
@@ -42,8 +46,9 @@ export default function PageClient() {
       // Redirect to the session page
       router.push(`/${data.sessionId}`);
     } catch (error) {
-      console.error('Error creating session:', error);
-      alert('Error creating session: ' + error);
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('Error creating session:', message);
+      alert('Error creating session: ' + message);
     }
   };
 

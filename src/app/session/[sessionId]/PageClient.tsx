@@ -4,10 +4,8 @@ import { useEffect, useState, useRef } from 'react';
 import Timer from '../../_components/Timer';
 import EditUI from '../../_components/inputs/EditUI';
 import TaskListWrapper from '../../_components/TaskListWrapper';
-import { useSearchParams, useParams } from 'next/navigation';
-import Navbar from 'db/app/_components/Navbar';
+import { useParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import useWindowSize from '../../_components/hooks/useWindowSize';
 
 interface SessionData {
   id?: string;
@@ -21,22 +19,21 @@ interface SessionData {
 
 const SessionPage = () => {
   const params = useParams();
-  const searchParams = useSearchParams();
-  const sessionId = params.sessionId;
-  const guestNameFromUrl = searchParams.get('name') || 'Guest';
+  const rawSessionId = params.sessionId;
+  const sessionId = Array.isArray(rawSessionId) ? rawSessionId[0] : rawSessionId ?? '';
 
   useEffect(() => {
+    if (!sessionId) return;
     const interval = setInterval(() => {
-      fetch(`/api/${sessionId}/heartbeat`, { method: 'POST' });
+      void fetch(`/api/${sessionId}/heartbeat`, { method: 'POST' }).catch((error) =>
+        console.error('Heartbeat failed', error),
+      );
     }, 30000);
     return () => clearInterval(interval);
   }, [sessionId]);
 
   const [session, setSession] = useState<SessionData | null>(null);
-  const [phase, setPhase] = useState<'stoody' | 'shortBreak' | 'longBreak' | 'transition'>('transition');
   const [editOpen, setEditOpen] = useState(false);
-
-  const { width, height } = useWindowSize();
 
   const [taskColWidth, setTaskColWidth] = useState<number>(() => {
     if (typeof window === 'undefined') return 280;
@@ -95,18 +92,29 @@ const SessionPage = () => {
   }, [isWide, taskColWidth, session]);
 
   useEffect(() => {
+    if (!sessionId) return;
     const fetchSession = async () => {
       try {
         const res = await fetch(`/api/session/${sessionId}`);
-        const data = await res.json();
-        setSession(data);
+        if (!res.ok) {
+          throw new Error(`Failed to load session ${sessionId}`);
+        }
+        const data: unknown = await res.json();
+        mergeSession(data);
       } catch (err) {
         console.error('Failed to load session', err);
         setSession({ error: 'Failed to load session' });
       }
     };
-    fetchSession();
+    void fetchSession();
   }, [sessionId]);
+
+  const mergeSession = (payload: unknown) => {
+    if (typeof payload !== 'object' || payload === null) {
+      throw new Error('Invalid session payload');
+    }
+    setSession((prev) => ({ ...(prev ?? {}), ...(payload as SessionData) }));
+  };
 
   if (!session) {
     return (
@@ -202,19 +210,19 @@ const SessionPage = () => {
                 shortBreak={session.shortBreak ?? 5}
                 longBreak={session.longBreak ?? 15}
                 cycles={session.cycles ?? 4}
-                onPhaseChange={(p) => setPhase(p)}
                 editOpen={editOpen}
                 onEditOpenChange={(v) => setEditOpen(v)}
-                onSettingsSave={async (s) => {
+                onSettingsSave={async (settings) => {
+                  if (!session?.id) return;
                   try {
                     const res = await fetch(`/api/session/${session.id}/settings`, {
                       method: 'PATCH',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(s),
+                      body: JSON.stringify(settings),
                     });
                     if (!res.ok) throw new Error('Failed to save');
-                    const updated = await res.json();
-                    setSession((prev) => ({ ...(prev ?? {}), ...updated }));
+                    const updated: unknown = await res.json();
+                    mergeSession(updated);
                     setEditOpen(false);
                   } catch (err) {
                     console.error('Failed to persist settings', err);
@@ -276,6 +284,7 @@ const SessionPage = () => {
                     cycles: session.cycles ?? 4,
                   }}
                   onSave={async (v) => {
+                    if (!session?.id) return;
                     try {
                       const res = await fetch(`/api/session/${session.id}/settings`, {
                         method: 'PATCH',
@@ -283,8 +292,8 @@ const SessionPage = () => {
                         body: JSON.stringify(v),
                       });
                       if (!res.ok) throw new Error('Failed to save');
-                      const updated = await res.json();
-                      setSession((prev) => ({ ...(prev ?? {}), ...updated }));
+                      const updated: unknown = await res.json();
+                      mergeSession(updated);
                       setEditOpen(false);
                     } catch (err) {
                       console.error('Failed to persist settings', err);

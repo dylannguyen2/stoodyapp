@@ -10,7 +10,7 @@ type PauseProps = {
 };
 
 export default function Playback({ onClick, size = 56, ariaLabel = 'Pause', sessionState = 'longBreak', isRunning = false }: PauseProps) {
-  let colour = 
+  const colour = 
     sessionState === 'stoody' ? 'from-[#C18FFF] to-[#8B5CF6] shadow-[0_4px_0px_#8054c7] hover:shadow-[0_2px_0px_#8054c7] hover:translate-y-[2px] active:shadow-[0_0px_0px_#8054c7]' 
     : sessionState === 'shortBreak' ? 'from-[#2BB5A3] to-[#1E8771] shadow-[0_4px_0px_#1E8771] hover:shadow-[0_2px_0px_#1E8771] hover:translate-y-[2px] active:shadow-[0_0px_0px_#1E8771]'
     : sessionState === "longBreak" ? 'from-[#4CAF50] to-[#3D9440] shadow-[0_4px_0px_#357A38] hover:shadow-[0_2px_0px_#357A38] hover:translate-y-[2px] active:shadow-[0_0px_0px_#357A38]'

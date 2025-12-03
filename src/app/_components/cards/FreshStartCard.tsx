@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Button from "../inputs/Button";
 
 export default function FreshStartCard({ onClick }: { onClick: () => void }) {
@@ -8,10 +9,13 @@ export default function FreshStartCard({ onClick }: { onClick: () => void }) {
         <h2 className="gochi-hand-regular text-lg text-gray-700 sm:text-xl">
           Create a new stoody session from scratch
         </h2>
-        <img
+        <Image
           src="/plant.png"
           alt="Fresh start illustration"
+          width={160}
+          height={160}
           className="mt-2 h-28 w-auto sm:h-32"
+          priority
         />
       </div>
 
