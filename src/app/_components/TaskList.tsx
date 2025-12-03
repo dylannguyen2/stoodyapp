@@ -244,7 +244,7 @@ export default function StickyNotesCycle({width = 72, height = 72}: {width?: num
                       setIndex(0);
                       setCurrentPage(1);
                     }}
-                    className="p-1 rounded bg-red-600 text-white hover:opacity-90 shadow-sm"
+                    className="p-1 rounded text-white hover:opacity-90 shadow-sm"
                     title="Remove all tasks"
                     aria-label="Remove all tasks"
                   >

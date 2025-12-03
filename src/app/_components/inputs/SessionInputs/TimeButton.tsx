@@ -8,7 +8,6 @@ interface TimeButtonProps {
   onClick: (value: number) => void;
   isExiting?: boolean;
   onExited?: () => void;
-  size: number;
 }
 
 export default function TimeButton({
@@ -18,7 +17,6 @@ export default function TimeButton({
   onClick,
   isExiting = false,
   onExited,
-  size,
 }: TimeButtonProps) {
   const isSelected = value === currentTime;
 
@@ -47,15 +45,14 @@ export default function TimeButton({
     >
       {isExiting && onExited ? <ExitCaller onExited={onExited} /> : null}
 
-        <Button
-          text={text}
-          onClick={() => onClick(value)}
-          gradient={gradient}
-          shadow={shadowHex}
-          width={size}
-        />
-
-      </div>
+      <Button
+        text={text}
+        onClick={() => onClick(value)}
+        gradient={gradient}
+        shadow={shadowHex}
+        className="w-full min-w-[120px] text-base sm:min-w-[140px] lg:min-w-[160px]"
+      />
+    </div>
   );
 }
 

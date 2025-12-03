@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from './_components/Navbar';
 import React from 'react';
 import TimeButtons from './_components/inputs/SessionInputs/TimeButtons';
 import { useLocalStorage } from './_components/hooks/useLocalStorage';
@@ -13,18 +12,14 @@ import LeftButton from './_components/inputs/SessionInputs/LeftButton';
 import RightButton from './_components/inputs/SessionInputs/RightButton';
 import EditUI from './_components/inputs/EditUI';
 import { AnimatePresence, motion } from 'framer-motion';
-import useWindowSize from './_components/hooks/useWindowSize';
 
+const DESKTOP_ARROW_SIZE = 64;
+const DESKTOP_ARROW_ICON = 30;
+const MOBILE_ARROW_SIZE = 56;
+const MOBILE_ARROW_ICON = 26;
 
 export default function PageClient() {
   const router = useRouter();
-  const { width, height } = useWindowSize();
-
-  // design target size (tweak to your design baseline)
-  const DESIGN_W = 1280;
-  const DESIGN_H = 800;
-  // scale down uniformly to fit both width and height, never scale up
-  const pageScale = Math.min(1, width / DESIGN_W, height / DESIGN_H || 1);
   const sessionCreationStates = ['cached','name', 'stoody', 'shortBreak', 'longBreak', 'cycles'] as const;
   type SessionCreationState = (typeof sessionCreationStates)[number];
 
@@ -214,23 +209,22 @@ export default function PageClient() {
     setSessionCreateState('name');
   };
 
-  // Dynamic Sizing
-  const svgSize = 1/2 * Math.min(width, height);
-  const arrowSize = Math.max(48, 0.12 * svgSize);
-  const arrowIconSize = Math.round(arrowSize * 0.6);
-
-  const timeSize = Math.max(48, 0.2 * svgSize);
-  const timeSpacing = 1/3 * timeSize;
-
-  // card width: 1/3 of viewport width (clamped to sensible min/max)
-  const cardThird = Math.round(Math.max(240, Math.min(680, width / 3)));
-
-  if (!hydrated || width === 0 || height === 0) {
+  if (!hydrated) {
     return null;
   }
 
   return (
-    <div className="w-screen h-screen flex flex-col">
+    <div className="relative flex min-h-screen w-full flex-col overflow-hidden bg-[#fefefe] text-[#150a2f]">
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          backgroundColor: '#ffffff',
+          backgroundImage:
+            'linear-gradient(0deg, rgba(196,189,224,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(196,189,224,0.35) 1px, transparent 1px)',
+          backgroundSize: '80px 80px',
+        }}
+      />
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-transparent to-[#f8f5ff]" />
       <AnimatePresence>
         {editOpen && (
           <motion.div
@@ -239,7 +233,6 @@ export default function PageClient() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {/* Backdrop with blur */}
             <motion.div
               className="absolute inset-0 bg-black/30 backdrop-blur-sm"
               initial={{ opacity: 0 }}
@@ -248,17 +241,14 @@ export default function PageClient() {
               transition={{ duration: 0.15 }}
               onClick={closeEdit}
             />
-
-            {/* Modal container */}
             <motion.div
-              // allow a bit more room for the modal
-              className="relative z-10 w-full max-w-md mx-auto"
-               initial={{ opacity: 0, scale: 0.98 }}
-               animate={{ opacity: 1, scale: 1 }}
-               exit={{ opacity: 0, scale: 0.98 }}
-               transition={{ duration: 0.15 }}
-             >
-               <EditUI
+              className="relative z-10 mx-auto w-full max-w-md"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.15 }}
+            >
+              <EditUI
                 initial={{
                   stoody: stoody ?? 25,
                   shortBreak: shortBreak ?? 5,
@@ -273,132 +263,141 @@ export default function PageClient() {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* <Navbar /> */}
-      {/* Headings take up half the space above input */}
-      <div className="flex items-center justify-center text-center mt-8">
-        <div>
-          <h1 className="font-bold text-6xl">Study. Rest. Repeat.</h1>
-          <h1 className="font-bold text-3xl gochi-hand-regular mt-2">
-            {sessionCreateState === "name"
-              ? "What shall I call you?"
-              : sessionCreateState === "stoody"
-              ? "How long do you want to stoody?"
-              : sessionCreateState === "shortBreak"
-              ? "How long do you want to short break for?"
-              : sessionCreateState === "longBreak"
-              ? "How long do you want to long break for?"
-              : sessionCreateState === "cycles"
-              ? "How many cycles do you want to complete?"
-              : ""}
-          </h1>
-        </div>
-      </div>
-      <div className="flex-1 flex items-center justify-center">
-        {/* scale wrapper: keeps content proportional to viewport */}
-        <div
-        >
-          <div className="flex flex-col items-center w-full max-w-3xl">
-            {sessionCreateState === 'cached' && (
-              <div className="flex flex-col items-center gap-4 w-full">
-                <LastPresetCard
-                  name={name}
-                  stoody={stoody}
-                  shortBreak={shortBreak}
-                  longBreak={longBreak}
-                  cycles={cycles}
-                  onClick={handleStartSession}
-                  onEdit={openEdit}
-                  cardWidth={cardThird}
-                />
-                <FreshStartCard
-                  onClick={() => {applyDefaultPreset();}}
-                  cardWidth={cardThird}
-                />
-              </div>
-            )}
-            {sessionCreateState !== 'cached' && (
-              <>
-              <div className="flex items-center justify-center w-full " style={{height: '50vh'}}>
 
-                {/* Wider group: buttons spread apart with SessionInput centered */}
-                <div className="flex items-center justify-between">
-                  
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-12 pt-8 sm:px-6 lg:px-12">
+        <div className="flex flex-col items-center text-center">
+          <h1 className="text-4xl font-bold sm:text-5xl lg:text-6xl">Study. Rest. Repeat.</h1>
+          <h2 className="gochi-hand-regular mt-3 text-2xl font-bold text-[#6b3cff] sm:text-3xl">
+            {sessionCreateState === 'name'
+              ? 'What shall I call you?'
+              : sessionCreateState === 'stoody'
+              ? 'How long do you want to stoody?'
+              : sessionCreateState === 'shortBreak'
+              ? 'How long do you want to short break for?'
+              : sessionCreateState === 'longBreak'
+              ? 'How long do you want to long break for?'
+              : sessionCreateState === 'cycles'
+              ? 'How many cycles do you want to complete?'
+              : ''}
+          </h2>
+        </div>
+
+        <div className="mt-10 flex flex-1 w-full flex-col items-center gap-10">
+          {sessionCreateState === 'cached' ? (
+            <div className="grid w-full gap-6 md:grid-cols-2">
+              <LastPresetCard
+                name={name}
+                stoody={stoody}
+                shortBreak={shortBreak}
+                longBreak={longBreak}
+                cycles={cycles}
+                onClick={handleStartSession}
+                onEdit={openEdit}
+              />
+              <FreshStartCard
+                onClick={() => {
+                  applyDefaultPreset();
+                }}
+              />
+            </div>
+          ) : (
+            <div className="flex w-full flex-col gap-8">
+              <div className="flex w-full flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-center sm:gap-10">
+                <div className="hidden h-[320px] shrink-0 items-center justify-center sm:flex sm:h-[360px]">
                   <LeftButton
                     sessionCreateState={sessionCreateState}
                     hasCachedPreset={hasCachedPreset}
                     handlePrevClick={handlePrevClick}
                     handleStartSession={handleStartSession}
-                    size={arrowSize}
-                    arrowIconSize={arrowIconSize}
+                    size={DESKTOP_ARROW_SIZE}
+                    arrowIconSize={DESKTOP_ARROW_ICON}
                   />
+                </div>
 
-                  <div className="flex-1 h-full flex justify-center border border-red-500" style={{width: '50vw'}}>
-                    <SessionInput
-                      sessionCreateState={sessionCreateState}
-                      name={name}
-                      stoody={stoody}
-                      shortBreak={shortBreak}
-                      longBreak={longBreak}
-                      cycles={cycles}
-                      isExiting={isExiting}
-                      setName={setName}
-                      setStoody={setStoody}
-                      setShortBreak={setShortBreak}
-                      setLongBreak={setLongBreak}
-                      setCycles={setCycles}
-                      nextSessionState={nextSessionState}
-                      handleStartSession={handleStartSession}
-                      handleOnExited={handleOnExited}
-                      windowWidth={width}
-                      windowHeight={height}
-                    />
-                  </div>
+                <div className="flex h-[320px] w-full flex-1 items-center justify-center sm:h-[360px]">
+                  <SessionInput
+                    sessionCreateState={sessionCreateState}
+                    name={name}
+                    stoody={stoody}
+                    shortBreak={shortBreak}
+                    longBreak={longBreak}
+                    cycles={cycles}
+                    isExiting={isExiting}
+                    setName={setName}
+                    setStoody={setStoody}
+                    setShortBreak={setShortBreak}
+                    setLongBreak={setLongBreak}
+                    setCycles={setCycles}
+                    nextSessionState={nextSessionState}
+                    handleStartSession={handleStartSession}
+                    handleOnExited={handleOnExited}
+                  />
+                </div>
 
+                <div className="hidden h-[320px] shrink-0 items-center justify-center sm:flex sm:h-[360px]">
                   <RightButton
                     sessionCreateState={sessionCreateState}
                     handleNextClick={handleNextClick}
                     handleStartSession={handleStartSession}
-                    size={arrowSize}
-                    arrowIconSize={arrowIconSize}
+                    size={DESKTOP_ARROW_SIZE}
+                    arrowIconSize={DESKTOP_ARROW_ICON}
                   />
                 </div>
               </div>
-              <div className="pt-8 flex justify-center min-h-[90px]">
-                {(sessionCreateState !== "name") && (
+
+              <div className="flex w-full items-center justify-between gap-4 sm:hidden">
+                <div className="flex h-[92px] flex-1 items-center justify-center">
+                  <LeftButton
+                    sessionCreateState={sessionCreateState}
+                    hasCachedPreset={hasCachedPreset}
+                    handlePrevClick={handlePrevClick}
+                    handleStartSession={handleStartSession}
+                    size={MOBILE_ARROW_SIZE}
+                    arrowIconSize={MOBILE_ARROW_ICON}
+                  />
+                </div>
+                <div className="flex h-[92px] flex-1 items-center justify-center">
+                  <RightButton
+                    sessionCreateState={sessionCreateState}
+                    handleNextClick={handleNextClick}
+                    handleStartSession={handleStartSession}
+                    size={MOBILE_ARROW_SIZE}
+                    arrowIconSize={MOBILE_ARROW_ICON}
+                  />
+                </div>
+              </div>
+
+              {sessionCreateState !== 'name' && (
+                <div className="w-full pt-2">
+                  <div className="flex min-h-[120px] w-full items-center justify-center">
                     <TimeButtons
                       sessionCreateState={sessionCreateState}
                       value={
-                        sessionCreateState === "stoody"
+                        sessionCreateState === 'stoody'
                           ? stoody
-                          : sessionCreateState === "shortBreak"
+                          : sessionCreateState === 'shortBreak'
                           ? shortBreak
-                          : sessionCreateState === "longBreak"
+                          : sessionCreateState === 'longBreak'
                           ? longBreak
                           : cycles
                       }
                       onChange={(v: number) =>
-                        sessionCreateState === "stoody"
+                        sessionCreateState === 'stoody'
                           ? setStoody(v)
-                          : sessionCreateState === "shortBreak"
+                          : sessionCreateState === 'shortBreak'
                           ? setShortBreak(v)
-                          : sessionCreateState === "longBreak"
+                          : sessionCreateState === 'longBreak'
                           ? setLongBreak(v)
                           : setCycles(v)
                       }
                       isExiting={isExiting}
                       onExited={handleOnExited}
-                      size={timeSize}
-                      spacing={timeSpacing}
                     />
-
-                )}
-              </div>
-              </>
-            )}
-
-              {/* {sessionCreateState}: {name} {stoody} {shortBreak} {longBreak} {cycles} cached:{hasCachedPreset.toString()} */}
-
-          </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

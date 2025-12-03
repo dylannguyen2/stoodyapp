@@ -114,6 +114,10 @@ export default function Sundial({
   };
 
   const format = (mins: number) => `${mins} mins`;
+  const labelText = format(minutes);
+  const approxCharWidth = 0.55; // fraction of font size each char typically occupies
+  const maxLabelFont = knobSize * 0.28;
+  const labelFont = Math.max(10, Math.min(maxLabelFont, (knobSize * 0.8) / (labelText.length * approxCharWidth)));
 
   return (
    <div
@@ -168,7 +172,16 @@ export default function Sundial({
           </svg>
 
           {/* minutes label centered on knob */}
-          <text x={knob.x} y={knob.y + 4} textAnchor="middle" fontWeight={700} fill="#fff" style={{ fontSize: 16 }}>{format(minutes)}</text>
+          <text
+            x={knob.x}
+            y={knob.y + labelFont * 0.35}
+            textAnchor="middle"
+            fontWeight={700}
+            fill="#fff"
+            style={{ fontSize: labelFont }}
+          >
+            {labelText}
+          </text>
         </g>
         </svg>
       </div>

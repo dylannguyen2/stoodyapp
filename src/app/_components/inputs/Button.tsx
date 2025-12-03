@@ -17,7 +17,7 @@ export default function Button(props: ButtonProps) {
     onClick,
     text,
     height,
-    width=32,
+    width,
     gradient,
     shadow,
     textColour="white",
@@ -60,9 +60,8 @@ export default function Button(props: ButtonProps) {
         boxShadow,
         transition: 'transform .15s, box-shadow .15s',
         ...props.style,
-        minWidth: width,
-        height: height,
-        // fontSize: Math.max(12, 0.2 * width)
+        ...(width !== undefined ? { minWidth: width } : {}),
+        ...(height !== undefined ? { height } : {}),
       }}
       className={`${baseClass}`}
     >

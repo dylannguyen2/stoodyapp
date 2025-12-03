@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import StickyNotes from "./StickyNotes";
 import StoodyInput from "./StoodyInput";
 import ShortBreakInput from "./ShortBreakInput";
@@ -20,11 +21,11 @@ interface SessionInputProps {
   handleStartSession: () => void;
   isExiting?: boolean;
   handleOnExited?: () => void;
-  windowWidth: number;
-  windowHeight: number;
 }
 
-export default function ({
+const clampSize = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+export default function SessionInput({
   sessionCreateState,
   name,
   stoody,
@@ -40,12 +41,32 @@ export default function ({
   handleStartSession,
   isExiting = false,
   handleOnExited,
-  windowWidth,
-  windowHeight
 }: SessionInputProps) {
-  const shorterSide = Math.min(windowWidth, windowHeight);
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState(320);
+
+  useEffect(() => {
+    if (!container || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setContainerWidth(entry.contentRect.width);
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [container]);
+
+  const baseSize = clampSize(containerWidth, 220, 520);
+  const stickySize = clampSize(baseSize * 0.9, 200, 420);
+  const stoodySize = clampSize(baseSize, 240, 520);
+  const shortSize = clampSize(baseSize * 0.9, 200, 460);
+  const longSize = clampSize(baseSize * 1.05, 250, 540);
+  const cyclesSize = clampSize(baseSize * 0.85, 200, 440);
+
   return (
-    <div className="">
+    <div
+      ref={setContainer}
+      className="w-full max-w-[280px] sm:max-w-[340px] md:max-w-[380px] lg:max-w-[440px] xl:max-w-[500px]"
+    >
     {sessionCreateState === "name" && (
         <StickyNotes
           name={name}
@@ -54,7 +75,7 @@ export default function ({
           handleStartSession={handleStartSession}
           isExiting={isExiting}
           onExited={handleOnExited}
-          size={shorterSide * 0.4}
+          size={stickySize}
         />
       )}
       {sessionCreateState === "stoody" && (
@@ -64,7 +85,7 @@ export default function ({
           maxMinutes={120}
           isExiting={isExiting}
           onExited={handleOnExited}
-          size={shorterSide / 2}
+          size={stoodySize}
         />
       )}
       {sessionCreateState === "shortBreak" && (
@@ -74,7 +95,7 @@ export default function ({
           maxMinutes={60}
           isExiting={isExiting}
           onExited={handleOnExited}
-          size={shorterSide / 2}
+          size={shortSize}
         />
       )}
       {sessionCreateState === "longBreak" && (
@@ -84,7 +105,7 @@ export default function ({
           maxMinutes={120}
           isExiting={isExiting}
           onExited={handleOnExited}
-          size={shorterSide /1.5}
+          size={longSize}
         />
       )}
       {sessionCreateState === "cycles" && (
@@ -93,7 +114,7 @@ export default function ({
           onChange={setCycles}
           isExiting={isExiting}
           onExited={handleOnExited}
-          size={shorterSide / 2 * 0.9}
+          size={cyclesSize}
         />
       )}
     </div>
