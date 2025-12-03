@@ -4,7 +4,9 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-type RouteContext = { params: { sessionId: string } };
+type RouteContext = {
+  params?: Promise<Record<string, string | string[] | undefined>>;
+};
 
 type SessionSettings = {
   stoody: number;
@@ -20,8 +22,13 @@ const isValidSettings = (value: unknown): value is SessionSettings => {
   return isPositive(obj.stoody) && isPositive(obj.shortBreak) && isPositive(obj.longBreak) && isPositive(obj.cycles);
 };
 
-export async function PATCH(req: NextRequest, { params }: RouteContext) {
-  const { sessionId } = params;
+export async function PATCH(req: NextRequest, context: RouteContext) {
+  const params = await context.params;
+  const sessionParam = params?.sessionId;
+  const sessionId = typeof sessionParam === 'string' ? sessionParam : undefined;
+  if (!sessionId) {
+    return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
+  }
   try {
     const body = (await req.json()) as unknown;
     if (!isValidSettings(body)) {

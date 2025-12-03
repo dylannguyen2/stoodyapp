@@ -4,9 +4,17 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function POST(_req: NextRequest, context: { params: { sessionId: string } }) {
-  const { params } = context;
-  const { sessionId } = params;
+type RouteContext = {
+  params?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export async function POST(_req: NextRequest, context: RouteContext) {
+  const params = await context.params;
+  const sessionParam = params?.sessionId;
+  const sessionId = typeof sessionParam === 'string' ? sessionParam : undefined;
+  if (!sessionId) {
+    return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
+  }
 
   // Update lastActiveAt if session exists
   const result = await prisma.guestSession.updateMany({
