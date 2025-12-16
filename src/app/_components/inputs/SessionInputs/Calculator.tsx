@@ -19,9 +19,10 @@ const evaluateExpression = (raw: string): number | null => {
 
   const normalized: string[] = [];
   tokens.forEach((token, index) => {
+    const previousToken = index > 0 ? tokens[index - 1] : undefined;
     if (
       token === '-' &&
-      (index === 0 || isOperator(tokens[index - 1]) || tokens[index - 1] === '(')
+      (index === 0 || (previousToken !== undefined && (isOperator(previousToken) || previousToken === '(')))
     ) {
       normalized.push('0');
     }
@@ -33,11 +34,16 @@ const evaluateExpression = (raw: string): number | null => {
 
   for (const token of normalized) {
     if (isOperator(token)) {
-      while (
-        stack.length > 0 &&
-        isOperator(stack[stack.length - 1]) &&
-        operatorPrecedence[stack[stack.length - 1]] >= operatorPrecedence[token]
-      ) {
+      while (stack.length > 0) {
+        const top = stack[stack.length - 1];
+        if (!top || !isOperator(top)) {
+          break;
+        }
+        const topPrecedence = operatorPrecedence[top];
+        const tokenPrecedence = operatorPrecedence[token];
+        if (topPrecedence === undefined || tokenPrecedence === undefined || topPrecedence < tokenPrecedence) {
+          break;
+        }
         output.push(stack.pop()!);
       }
       stack.push(token);
@@ -93,6 +99,7 @@ const evaluateExpression = (raw: string): number | null => {
 
   if (valueStack.length !== 1) return null;
   const result = valueStack[0];
+  if (result === undefined) return null;
   return Number.isFinite(result) ? result : null;
 };
 

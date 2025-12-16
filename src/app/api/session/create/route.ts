@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       shortBreak,
       longBreak,
       cycles,
-      deviceId,
+      deviceId: deviceId ?? '',
     },
   });
 

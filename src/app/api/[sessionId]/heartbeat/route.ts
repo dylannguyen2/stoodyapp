@@ -4,11 +4,10 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-type RouteContext = {
-  params?: Promise<Record<string, string | string[] | undefined>>;
-};
-
-export async function POST(_req: NextRequest, context: RouteContext) {
+export async function POST(
+  _req: NextRequest,
+  context: { params: Promise<Record<string, string | string[] | undefined>> }
+) {
   const params = await context.params;
   const sessionParam = params?.sessionId;
   const sessionId = typeof sessionParam === 'string' ? sessionParam : undefined;

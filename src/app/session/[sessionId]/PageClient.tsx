@@ -210,24 +210,7 @@ const SessionPage = () => {
                 shortBreak={session.shortBreak ?? 5}
                 longBreak={session.longBreak ?? 15}
                 cycles={session.cycles ?? 4}
-                editOpen={editOpen}
                 onEditOpenChange={(v) => setEditOpen(v)}
-                onSettingsSave={async (settings) => {
-                  if (!session?.id) return;
-                  try {
-                    const res = await fetch(`/api/session/${session.id}/settings`, {
-                      method: 'PATCH',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(settings),
-                    });
-                    if (!res.ok) throw new Error('Failed to save');
-                    const updated: unknown = await res.json();
-                    mergeSession(updated);
-                    setEditOpen(false);
-                  } catch (err) {
-                    console.error('Failed to persist settings', err);
-                  }
-                }}
               />
             </div>
           </motion.div>
